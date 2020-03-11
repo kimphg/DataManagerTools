@@ -33,7 +33,7 @@ namespace AISTools
             btn_stop.FlatStyle = FlatStyle.Flat;
             btn_stop.FlatAppearance.BorderSize = 0;
             //timer
-            timerTask.Interval = 1000 * 60 * 10; // set time request to server
+            timerTask.Interval = 1000 * 60 * 5; // set time request to server
         }
 
         private void btn_start_Click(object sender, EventArgs e)
@@ -63,7 +63,7 @@ namespace AISTools
         {
             ThreadHelper.SetText(this, txt_timer, (DateTime.Now.Subtract(timeBegin)).ToString(@"dd\.hh\:mm\:ss"));
         }
-
+        delegate void SetTextCallback(string text);
         private void timerTask_Tick(object sender, EventArgs e)
         {
             dem++;
@@ -87,6 +87,24 @@ namespace AISTools
                 Task.Run(() => configDataToDict(data));
             }
 
+            if(request.errorOutput.Length>0) SetText( request.errorOutput);
+
+        }
+
+        private void SetText(string text)
+        {
+            // InvokeRequired required compares the thread ID of the
+            // calling thread to the thread ID of the creating thread.
+            // If these threads are different, it returns true.
+            if (this.richTextBox1.InvokeRequired)
+            {
+                SetTextCallback d = new SetTextCallback(SetText);
+                this.Invoke(d, new object[] { text });
+            }
+            else
+            {
+                this.richTextBox1.Text = richTextBox1.Text + text;
+            }
         }
         bool dictAvaiable = false;
         //handling data for dict

@@ -15,6 +15,7 @@ namespace AISTools.Object
         private string jsonString = "";
         private string type = "";
         private int total;
+        public string errorOutput = "";
         public RequestShip() { }
         ~RequestShip() { }
         public RequestShip(string url)
@@ -29,7 +30,7 @@ namespace AISTools.Object
                 }
                 catch (WebException e)
                 {
-                    MessageBox.Show(e.StackTrace);
+                    errorOutput += e.ToString() ;//MessageBox.Show(e.StackTrace);
                 }
 
             }
@@ -44,7 +45,8 @@ namespace AISTools.Object
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.StackTrace);
+                errorOutput += e.ToString();
+                //MessageBox.Show(e.StackTrace);
             }
             return "null";
         }
@@ -58,7 +60,8 @@ namespace AISTools.Object
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.StackTrace);
+                errorOutput += e.ToString();
+                //MessageBox.Show(e.StackTrace);
             }
             return 0;
         }
