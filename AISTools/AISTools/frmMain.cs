@@ -175,28 +175,30 @@ namespace AISTools
                         //    Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
                         //    thread.Start();
                         //}
-                        if (File.Exists(dlg.FileName))
-                        {
-                            DialogResult dr = MessageBox.Show("File already exists! \nDo you like override it? \n" + dlg.FileName, "Save As", MessageBoxButtons.YesNo);
-                            //if choose override
-                            if (dialogResult == DialogResult.Yes)
-                            {
-                                Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName,1)));
-                                thread.Start();
-                            }
-                            //if choose replace
-                            else if (dialogResult == DialogResult.No)
-                            {
-                                Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
-                                thread.Start();
-                            }
-                        }
-                        else
-                        {
-                            Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
-                            thread.Start();
+                        //if (File.Exists(dlg.FileName))
+                        //{
+                        //    DialogResult dr = MessageBox.Show("File already exists! \nDo you like override it? \n" + dlg.FileName, "Save As", MessageBoxButtons.YesNo);
+                        //    //if choose override
+                        //    if (dialogResult == DialogResult.Yes)
+                        //    {
+                        //        Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName,1)));
+                        //        thread.Start();
+                        //    }
+                        //    //if choose replace
+                        //    else if (dialogResult == DialogResult.No)
+                        //    {
+                        //        Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
+                        //        thread.Start();
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
+                        //    thread.Start();
 
-                        }
+                        //}
+                        Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
+                        thread.Start();
 
                     }
                 }
