@@ -58,6 +58,7 @@
     <Compile Include="GlobalVar.cs" />
     <Compile Include="Object\Bouy.cs" />
     <Compile Include="Object\Coordinate.cs" />
+    <Compile Include="Object\ReadFile.cs" />
     <Compile Include="Object\RequestShip.cs" />
     <Compile Include="Object\SaveFile.cs" />
     <Compile Include="Object\Ship.cs" />

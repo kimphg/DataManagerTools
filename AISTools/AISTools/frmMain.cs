@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -164,8 +165,39 @@ namespace AISTools
                   //  dlg.FilterIndex = 2;
                     if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
-                        Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
-                        thread.Start();
+                        //if (File.Exists(dlg.FileName))
+                        //{
+                        //    Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
+                        //    thread.Start();
+                        //}
+                        //else
+                        //{
+                        //    Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
+                        //    thread.Start();
+                        //}
+                        if (File.Exists(dlg.FileName))
+                        {
+                            DialogResult dr = MessageBox.Show("File already exists! \nDo you like override it? \n" + dlg.FileName, "Save As", MessageBoxButtons.YesNo);
+                            //if choose override
+                            if (dialogResult == DialogResult.Yes)
+                            {
+                                Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName,1)));
+                                thread.Start();
+                            }
+                            //if choose replace
+                            else if (dialogResult == DialogResult.No)
+                            {
+                                Thread thread = new Thread(new ThreadStart(() => SaveFile.toSaveAll(dictShipJourney, dlg.FileName)));
+                                thread.Start();
+                            }
+                        }
+                        else
+                        {
+                            Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
+                            thread.Start();
+
+                        }
+
                     }
                 }
                 else if (dialogResult == DialogResult.No)
@@ -203,34 +235,76 @@ namespace AISTools
                 }
                 MessageBox.Show("Save file bouys success !", "Notice ");
             }
+
         }
         //save density of ship in the East Sea
         private void save_Ship_Click(object sender, EventArgs e)
         {
+            //if (dictAvaiable)
+            //{
+            //    if (GlobalVar.pathSaveFileDensity == "")
+            //    {
+            //        SaveFileDialog dlg = new SaveFileDialog();
+            //        dlg.InitialDirectory = @"D:\";
+            //        dlg.RestoreDirectory = true;
+            //        dlg.DefaultExt = "json";
+            //        dlg.Filter = "json file (*.json)|*.json";
+
+            //        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //        {
+            //            GlobalVar.pathSaveFileDensity = dlg.FileName;
+            //            Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
+            //            thread.Start();
+            //        }
+
+            //    }
+            //    else
+            //    {
+            //        Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
+            //        thread.Start();
+            //    }
+            //    MessageBox.Show("Save file density success !", "Notice ");
+            //}
             if (dictAvaiable)
             {
-                if (GlobalVar.pathSaveFileDensity == "")
+                bool isSaved = false;
+                SaveFileDialog dlg = new SaveFileDialog();
+                dlg.InitialDirectory = @"D:\";
+                dlg.RestoreDirectory = true;
+                dlg.DefaultExt = "json";
+                dlg.Filter = "json file (*.json)|*.json";
+                dlg.OverwritePrompt = false;
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    SaveFileDialog dlg = new SaveFileDialog();
-                    dlg.InitialDirectory = @"D:\";
-                    dlg.RestoreDirectory = true;
-                    dlg.DefaultExt = "json";
-                    dlg.Filter = "json file (*.json)|*.json";
-
-                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    GlobalVar.pathSaveFileDensity = dlg.FileName;
+                    //check exist of file in computer
+                    if (File.Exists(dlg.FileName))
                     {
-                        GlobalVar.pathSaveFileDensity = dlg.FileName;
+                        DialogResult dialogResult = MessageBox.Show("File already exists! \nDo you like override it? \n" + dlg.FileName, "Save As", MessageBoxButtons.YesNoCancel);
+                        //if choose override
+                        if (dialogResult == DialogResult.Yes)
+                        {
+                            isSaved = true;
+                            Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity, 1)));
+                            thread.Start();
+                        }
+                        //if choose replace
+                        else if (dialogResult == DialogResult.No)
+                        {
+                            isSaved = true;
+                            Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
+                            thread.Start();
+                        }
+                    }
+                    else
+                    {
+                        isSaved = true;
                         Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
                         thread.Start();
-                    }
 
+                    }
                 }
-                else
-                {
-                    Thread thread = new Thread(new ThreadStart(() => SaveFile.toDensity(dictShipJourney, GlobalVar.pathSaveFileDensity)));
-                    thread.Start();
-                }
-                MessageBox.Show("Save file density success !", "Notice ");
+                if (isSaved) MessageBox.Show("Save file bouys success !", "Notice ");
             }
         }
         //save info ship has shipwrecked

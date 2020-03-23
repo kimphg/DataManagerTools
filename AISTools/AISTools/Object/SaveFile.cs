@@ -30,6 +30,7 @@ namespace AISTools.Object
                 tw.Close();
             }
         }
+        //to density replace the file
         public static void toDensity(Dictionary<string, ShipJourney> list, string path)
         {
             Dictionary<string, Dictionary<string, long>> dictDensity = new Dictionary<string, Dictionary<string, long>>();
@@ -71,18 +72,62 @@ namespace AISTools.Object
             }
 
             string jsonString = JsonConvert.SerializeObject(dictDensity, Formatting.Indented);
-            //using (var tw = new StreamWriter(path + @"\density_" + getNowDate() + ".json"))
-            //{
-            //    tw.WriteLine(jsonString);
-            //    tw.Close();
-            //}
             using (var tw = new StreamWriter(path))
             {
                 tw.WriteLine(jsonString);
                 tw.Close();
             }
         }
+        //save density override . it had in computer.
+        public static void toDensity(Dictionary<string, ShipJourney> list, string path,int type = 1)
+        {
+            Dictionary<string, Dictionary<string, long>> dictDensity = new Dictionary<string, Dictionary<string, long>>();
+            dictDensity = ReadFile.FileDensity(path);
+            foreach (var item in list.Values)
+            {
+                if (item.Type != "-2" || item.Type != "-3")
+                {
+                    foreach (var coor in item.ListCoor)
+                    {
+                        if (dictDensity.ContainsKey(coor.getLat()))
+                        {
+                            Dictionary<string, long> temp = new Dictionary<string, long>();
+                            temp = dictDensity[coor.getLat()];
+                            //check new lng
+                            if (temp.ContainsKey(coor.getLng()))
+                            {
+                                long num = temp[coor.getLng()];
+                                num++;
+                                temp[coor.getLng()] = num;
+                            }
+                            else
+                            {
+                                //add new lng
+                                temp.Add(coor.getLng(), 1);
+                            }
+                            dictDensity[coor.getLat()] = temp;
 
+                        }
+                        else
+                        {
+                            Dictionary<string, long> temp = new Dictionary<string, long>();
+                            temp.Add(coor.getLng(), 1);
+                            //add new lat
+                            dictDensity.Add(coor.getLat(), temp);
+                        }
+                    }
+                }
+
+            }
+
+            string jsonString = JsonConvert.SerializeObject(dictDensity, Formatting.Indented);
+            using (var tw = new StreamWriter(path))
+            {
+                tw.WriteLine(jsonString);
+                tw.Close();
+            }
+
+        }
         public static void toLeadingMark(Dictionary<string, ShipJourney> list, string path)
         {
             List<Bouy> listBouys = new List<Bouy>();
@@ -127,6 +172,16 @@ namespace AISTools.Object
         {
             string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
           //  string pathfile = path + "\\total_ship_" + getNowDate() + ".json";
+            using (var tw = new StreamWriter(path))
+            {
+                tw.WriteLine(jsonString);
+                tw.Close();
+            }
+        }
+        public static void toSaveAll(Dictionary<string, ShipJourney> list, string path,int type = 1)
+        {
+            string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
+            //  string pathfile = path + "\\total_ship_" + getNowDate() + ".json";
             using (var tw = new StreamWriter(path))
             {
                 tw.WriteLine(jsonString);
