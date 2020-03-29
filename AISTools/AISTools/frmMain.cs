@@ -57,7 +57,7 @@ namespace AISTools
             Task task = new Task(sendRequestAsync);
             task.Start();
 
-            timerNow.Interval = 1000;
+            timerNow.Interval = GlobalVar.TIME_UPDATE;
             timerNow.Elapsed += timerNow_Tick;
             timerNow.Start();
 
@@ -120,7 +120,7 @@ namespace AISTools
                 {
                     modeChooseDictSaveFileFirst = false;
                     modeChooseDictSaveFileSecond = true;
-                    SetText("\n" + "mode1" + " \n");
+                    SetText("\n" + "Mode 1" + " \n");
                     savetoDatabase(dictShipJourneyFirst,"mode 1");
 
                 }
@@ -129,7 +129,7 @@ namespace AISTools
                 {
                     modeChooseDictSaveFileFirst = true;
                     modeChooseDictSaveFileSecond =false;
-                    SetText("\n" + "mode2" + " \n");
+                    SetText("\n" + "Mode 2" + " \n");
                     savetoDatabase(dictShipJourneySecond,"mode 2");
                 }
                 saveAvaiable = true;
@@ -138,6 +138,7 @@ namespace AISTools
         private void savetoDatabase(Dictionary<string,ShipJourney> dict,string mode)
         {
 
+            SetText("\n" + "Saving database ... \n");
             //save data to data base about 10 minute
             foreach (var item in dict.Values.ToList())
             {
@@ -152,6 +153,7 @@ namespace AISTools
                 }
                 SetText("\n" + "Saving file " +item.Mmsi +" by " + mode+ " \n");
             }
+            SetText("\n" + "Success ! \n");
             dict.Clear();
         }
    
@@ -245,7 +247,7 @@ namespace AISTools
                     }
 
                 }
-                SetText("\n" + "Saving by mode 1" + " \n");
+                SetText("\n" + "Using mode 1" + " \n");
             }
             //neu la true se chon dictShipJourneySecond de luu
             else
@@ -271,7 +273,7 @@ namespace AISTools
 
                         }
                     }
-                    SetText("\n" + "saving by mode 2" + " \n");
+                    SetText("\n" + "Using mode 2" + " \n");
                 }
             }
            

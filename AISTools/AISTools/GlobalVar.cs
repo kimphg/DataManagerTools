@@ -16,5 +16,6 @@ namespace AISTools
         public static HashSet<string> hashMMSI = new HashSet<string>();
         public static int TIME_REQUEST = 1000 * 60 * 10;
         public static int TIME_SAVE = 1000 * 60 * 60;
+        public static int TIME_UPDATE = 1000;
     }
 }
