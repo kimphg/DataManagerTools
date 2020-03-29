@@ -46,7 +46,7 @@ namespace AISTools
             btn_stop.FlatStyle = FlatStyle.Flat;
             btn_stop.FlatAppearance.BorderSize = 0;
             //timer
-            timerTask.Interval = 1000 * 60 * 2; // set time request to server
+            timerTask.Interval = GlobalVar.TIME_REQUEST; // set time request to server
         }
         
         private void btn_start_Click(object sender, EventArgs e)
@@ -61,7 +61,7 @@ namespace AISTools
             timerNow.Elapsed += timerNow_Tick;
             timerNow.Start();
 
-            timerAutoSave.Interval = 1000 * 60 * 3;//set time auto save
+            timerAutoSave.Interval = GlobalVar.TIME_SAVE;//set time auto save
             timerAutoSave.Elapsed += timerAutoSave_Tick;
             timerAutoSave.Start();
 
