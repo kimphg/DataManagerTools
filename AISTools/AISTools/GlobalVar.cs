@@ -13,5 +13,7 @@ namespace AISTools
         public static string pathSaveFileDensity = "";
         public static string pathSaveFileLeadingMark = "";
         public static string pathSaveFileWreck = "";
+        public static HashSet<string> hashMMSI = new HashSet<string>();
+
     }
 }

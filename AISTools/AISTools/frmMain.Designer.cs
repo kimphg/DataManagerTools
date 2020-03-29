@@ -29,8 +29,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -74,6 +74,7 @@
             this.menuStrip1.Size = new System.Drawing.Size(728, 24);
             this.menuStrip1.TabIndex = 5;
             this.menuStrip1.Text = "navigation";
+            this.menuStrip1.Visible = false;
             // 
             // openToolStripMenuItem
             // 
@@ -97,30 +98,26 @@
             // save_bouy
             // 
             this.save_bouy.Name = "save_bouy";
-            this.save_bouy.Size = new System.Drawing.Size(146, 22);
+            this.save_bouy.Size = new System.Drawing.Size(180, 22);
             this.save_bouy.Text = "Bouy";
-            this.save_bouy.Click += new System.EventHandler(this.save_bouy_Click);
             // 
             // save_Ship
             // 
             this.save_Ship.Name = "save_Ship";
-            this.save_Ship.Size = new System.Drawing.Size(146, 22);
+            this.save_Ship.Size = new System.Drawing.Size(180, 22);
             this.save_Ship.Text = "Ship";
-            this.save_Ship.Click += new System.EventHandler(this.save_Ship_Click);
             // 
             // save_shipWreck
             // 
             this.save_shipWreck.Name = "save_shipWreck";
-            this.save_shipWreck.Size = new System.Drawing.Size(146, 22);
+            this.save_shipWreck.Size = new System.Drawing.Size(180, 22);
             this.save_shipWreck.Text = "Ship Wreck";
-            this.save_shipWreck.Click += new System.EventHandler(this.save_shipWreck_Click);
             // 
             // save_leadingMark
             // 
             this.save_leadingMark.Name = "save_leadingMark";
-            this.save_leadingMark.Size = new System.Drawing.Size(146, 22);
+            this.save_leadingMark.Size = new System.Drawing.Size(180, 22);
             this.save_leadingMark.Text = "Leading mark";
-            this.save_leadingMark.Click += new System.EventHandler(this.save_leadingMark_Click);
             // 
             // groupBox1
             // 
@@ -136,9 +133,9 @@
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(9, 33);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox1.Size = new System.Drawing.Size(320, 153);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
@@ -147,7 +144,7 @@
             // txt_timer
             // 
             this.txt_timer.Location = new System.Drawing.Point(176, 114);
-            this.txt_timer.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txt_timer.Margin = new System.Windows.Forms.Padding(2);
             this.txt_timer.Name = "txt_timer";
             this.txt_timer.Size = new System.Drawing.Size(113, 20);
             this.txt_timer.TabIndex = 7;
@@ -155,7 +152,7 @@
             // txt_dem
             // 
             this.txt_dem.Location = new System.Drawing.Point(70, 114);
-            this.txt_dem.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txt_dem.Margin = new System.Windows.Forms.Padding(2);
             this.txt_dem.Name = "txt_dem";
             this.txt_dem.Size = new System.Drawing.Size(76, 20);
             this.txt_dem.TabIndex = 9;
@@ -175,7 +172,7 @@
             this.btn_stop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(103)))), ((int)(((byte)(162)))), ((int)(((byte)(209)))));
             this.btn_stop.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn_stop.Location = new System.Drawing.Point(176, 72);
-            this.btn_stop.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btn_stop.Margin = new System.Windows.Forms.Padding(2);
             this.btn_stop.Name = "btn_stop";
             this.btn_stop.Size = new System.Drawing.Size(112, 32);
             this.btn_stop.TabIndex = 7;
@@ -188,7 +185,7 @@
             this.btn_start.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(103)))), ((int)(((byte)(162)))), ((int)(((byte)(209)))));
             this.btn_start.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.btn_start.Location = new System.Drawing.Point(176, 28);
-            this.btn_start.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btn_start.Margin = new System.Windows.Forms.Padding(2);
             this.btn_start.Name = "btn_start";
             this.btn_start.Size = new System.Drawing.Size(112, 33);
             this.btn_start.TabIndex = 6;
@@ -199,7 +196,7 @@
             // txt_total
             // 
             this.txt_total.Location = new System.Drawing.Point(70, 85);
-            this.txt_total.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txt_total.Margin = new System.Windows.Forms.Padding(2);
             this.txt_total.Name = "txt_total";
             this.txt_total.Size = new System.Drawing.Size(76, 20);
             this.txt_total.TabIndex = 5;
@@ -207,7 +204,7 @@
             // txt_type
             // 
             this.txt_type.Location = new System.Drawing.Point(70, 57);
-            this.txt_type.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txt_type.Margin = new System.Windows.Forms.Padding(2);
             this.txt_type.Name = "txt_type";
             this.txt_type.Size = new System.Drawing.Size(76, 20);
             this.txt_type.TabIndex = 4;
@@ -215,7 +212,7 @@
             // txt_status
             // 
             this.txt_status.Location = new System.Drawing.Point(70, 28);
-            this.txt_status.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txt_status.Margin = new System.Windows.Forms.Padding(2);
             this.txt_status.Name = "txt_status";
             this.txt_status.Size = new System.Drawing.Size(76, 20);
             this.txt_status.TabIndex = 3;
@@ -256,30 +253,30 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(103)))), ((int)(((byte)(162)))), ((int)(((byte)(209)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridView1.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(103)))), ((int)(((byte)(162)))), ((int)(((byte)(209)))));
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridView1.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
             this.dataGridView1.Location = new System.Drawing.Point(9, 191);
-            this.dataGridView1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.dataGridView1.Margin = new System.Windows.Forms.Padding(2);
             this.dataGridView1.MultiSelect = false;
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
             this.dataGridView1.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridView1.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridView1.RowHeadersVisible = false;
             this.dataGridView1.RowTemplate.Height = 24;
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
@@ -292,6 +289,8 @@
             // 
             // richTextBox1
             // 
+            this.richTextBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBox1.Location = new System.Drawing.Point(335, 33);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.Size = new System.Drawing.Size(384, 153);
@@ -312,7 +311,7 @@
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.menuStrip1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "frmMain";
             this.Text = "frmMain";
             this.menuStrip1.ResumeLayout(false);
