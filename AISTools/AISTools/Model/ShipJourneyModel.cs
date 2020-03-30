@@ -1,6 +1,7 @@
-﻿using AISTools.Entity;
-using System;
+﻿
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,30 +10,44 @@ namespace AISTools.Model
 {
     class ShipJourneyModel
     {
-        SeamapEntities entities = null;
+      
         public ShipJourneyModel()
         {
-            entities = new SeamapEntities();
+           
         }
-        public void insert(string mmsi,float lat,float lng,string sog,string cog,string time)
+       
+        public void Insert(Dictionary<string, Object.ShipJourney> dict)
         {
-            var shipJourney = new ShipJourney();
-            shipJourney.time = time;
-            shipJourney.mmsi = mmsi;
-            shipJourney.lat = lat;
-            shipJourney.lng = lng;
-            shipJourney.sog = sog;
-            shipJourney.cog = cog;
-            //if(((entities.ShipJourneys.Any(x=> x.mmsi == mmsi)) && (entities.ShipJourneys.Any(x => x.time==time)))){
-            // ///
-            //}
-            //else
-            //{
-            //    entities.ShipJourneys.Add(shipJourney);
-            //    entities.SaveChanges();
-            //}
-            entities.ShipJourneys.Add(shipJourney);
-            entities.SaveChanges();
+            BulkCopy(dict);
+        }
+        public void BulkCopy(Dictionary<string, Object.ShipJourney> dict)
+        {
+            var table = new DataTable();
+            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM ShipJourney", ConnectionString.connectionString))
+            {
+                adapter.Fill(table);
+            };
+            foreach (var item in dict.Values.ToList())
+            {
+                foreach (var coor in item.ListCoor)
+                {
+                   
+                    var row = table.NewRow();
+                    row["MMSI"] = item.Mmsi;
+                    row["LAT"] = coor.lat;
+                    row["LNG"] = coor.lng;
+                    row["SOG"] = coor.sog;
+                    row["COG"] = coor.cog;
+                    row["TIME"] = coor.time;
+                    table.Rows.Add(row);
+                }
+            }
+           
+            using (var bulk = new SqlBulkCopy(ConnectionString.connectionString))
+            {
+                bulk.DestinationTableName = "SHIPJOURNEY";
+                bulk.WriteToServer(table);
+            }
         }
     }
 }

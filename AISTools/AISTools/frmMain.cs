@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -21,8 +22,8 @@ namespace AISTools
         System.Timers.Timer timerAutoSave = new System.Timers.Timer();
         Dictionary<string, ShipJourney> dictShipJourney = new Dictionary<string, ShipJourney>();
         int dem = 0;
-        ShipModel modelShip = new ShipModel();
-        ShipJourneyModel modelSj = new ShipJourneyModel();
+        ShipModel shipmodel = new ShipModel();
+        ShipJourneyModel journeymodel = new ShipJourneyModel();
         Dictionary<string, ShipJourney> dictShipJourneyFirst = new Dictionary<string, ShipJourney>();
         Dictionary<string, ShipJourney> dictShipJourneySecond = new Dictionary<string, ShipJourney>();
         bool modeChooseDictSaveFileFirst;//lua chon dung dict 1 hay dict 2 de luu du lieu
@@ -37,7 +38,7 @@ namespace AISTools
         }
         private void setState()
         {
-            GlobalVar.hashMMSI =  modelShip.getAll();
+            GlobalVar.hashMMSI = shipmodel.getAll();
             //set style of form
             btn_start.TabStop = false;
             btn_start.FlatStyle = FlatStyle.Flat;
@@ -139,34 +140,15 @@ namespace AISTools
         {
 
             SetText("\n" + "Saving database ... \n");
-            //save data to data base about 10 minute
-            foreach (var item in dict.Values.ToList())
-            {
-                if (!GlobalVar.hashMMSI.Contains(item.Mmsi))
-                {
-                    modelShip.insert(item.Mmsi, item.Vsnm, Convert.ToInt32(item.Type), item.@class);
-                    GlobalVar.hashMMSI.Add(item.Mmsi);
-                }
-                foreach (var coor in item.ListCoor)
-                {
-                    modelSj.insert(item.Mmsi, coor.lat, coor.lng, coor.sog, coor.cog, coor.time);
-                }
-                SetText("\n" + "Saving file " +item.Mmsi +" by " + mode+ " \n");
-            }
-            SetText("\n" + "Success ! \n");
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            journeymodel.Insert(dict);
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            SetText("\n" + "Success !  "+ String.Format("{0:00}:{1:00}:{2:00}.{3:00}",ts.Hours, ts.Minutes, ts.Seconds,ts.Milliseconds / 10) +"\n");
             dict.Clear();
         }
    
-        //private void saveMMSItoDB(DataRow dr)
-        //{
-        //    if (GlobalVar.hashMMSI.Contains(dr["mmsi"].ToString()) == false)
-        //    {
-        //        model.insert(dr["mmsi"].ToString(), dr["vsnm"].ToString(), Convert.ToInt32(dr["type"].ToString()), dr["class"].ToString());
-        //        GlobalVar.hashMMSI.Add(dr["mmsi"].ToString());
-        //        string temp = "Ship " + dr["mmsi"].ToString() + " is saving...";
-        //        SetText("\n" + temp + " \n");
-        //    }
-        //}
         private void timerNow_Tick(object sender, EventArgs e)
         {
             updateTime();
@@ -230,6 +212,7 @@ namespace AISTools
             {
                 foreach (DataRow dr in data.Rows)
                 {
+                    saveMMSItoDB(dr);
                     if (checkShip(dr["mmsi"].ToString(),dictShipJourneyFirst))
                     {
                         //add new coor into ship of dict
@@ -256,6 +239,7 @@ namespace AISTools
                 {
                     foreach (DataRow dr in data.Rows)
                     {
+                        saveMMSItoDB(dr);
                         if (checkShip(dr["mmsi"].ToString(), dictShipJourneySecond))
                         {
                             //add new coor into ship of dict
@@ -276,16 +260,23 @@ namespace AISTools
                     SetText("\n" + "Using mode 2" + " \n");
                 }
             }
-           
             dictAvaiable = true;
-            //MessageBox.Show("ok");
         }
 
         private Boolean checkShip(string mmsi, Dictionary<string, ShipJourney> dict)
         {
-            
+
             if (dict.ContainsKey(mmsi)) return true;
             return false;
+        }
+
+        private void saveMMSItoDB(DataRow dr)
+        {
+            if (GlobalVar.hashMMSI.Contains(dr["mmsi"].ToString()) == false)
+            {
+                shipmodel.Insert(dr["mmsi"].ToString(), dr["vsnm"].ToString(), Convert.ToInt32(dr["type"].ToString()), dr["class"].ToString());
+                GlobalVar.hashMMSI.Add(dr["mmsi"].ToString());
+            }
         }
         //onclose
         protected override void OnClosed(EventArgs e)
