@@ -14,21 +14,26 @@ namespace AISTools.Object
         public float lat;
         public float lng;
         public string time;
-        public string sog;
-        public string cog;
+        public float sog;
+        public float cog;
+        public int lost;
+        public int min;
+
         public Coordinate(float lat, float lng, string time)
         {
             this.lat = lat;
             this.lng = lng;
             this.time = time;
         }
-        public Coordinate(float lat, float lng, string time,string sog,string cog)
+        public Coordinate(float lat, float lng, string time,float sog,float cog,int lost,int min)
         {
             this.lat = lat;
             this.lng = lng;
             this.time = time;
             this.cog = cog;
             this.sog = sog;
+            this.lost = lost;
+            this.min = min;
         }
         public Coordinate()
         {

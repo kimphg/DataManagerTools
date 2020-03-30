@@ -14,8 +14,8 @@ namespace AISTools
         public static string pathSaveFileLeadingMark = "";
         public static string pathSaveFileWreck = "";
         public static HashSet<string> hashMMSI = new HashSet<string>();
-        public static int TIME_REQUEST = 1000 * 60 * 5;
-        public static int TIME_SAVE = 1000 * 60 * 60;
+        public static int TIME_REQUEST = 1000 * 60 * 1;
+        public static int TIME_SAVE = 1000 * 60 * 1;
         public static int TIME_UPDATE = 1000;
     }
 }

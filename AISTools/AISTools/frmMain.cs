@@ -218,13 +218,27 @@ namespace AISTools
                         //add new coor into ship of dict
                         ShipJourney sj = new ShipJourney();
                         sj = dictShipJourneyFirst[dr["mmsi"].ToString()];
-                        sj.ListCoor.Add(new Coordinate(float.Parse(dr["lat"].ToString()), float.Parse(dr["lng"].ToString()), currentTime.ToString("MM/dd/yyyy h:mm tt"),dr["sog"].ToString(),dr["cog"].ToString()));
+                        sj.ListCoor.Add(new Coordinate(
+                            float.Parse(dr["lat"].ToString()), 
+                            float.Parse(dr["lng"].ToString()), 
+                            currentTime.ToString("MM/dd/yyyy h:mm tt"),
+                            float.Parse(dr["sog"].ToString()),
+                            float.Parse(dr["cog"].ToString()),
+                            Convert.ToInt32(dr["lost"].ToString()),
+                            Convert.ToInt32(dr["min"].ToString())));
                         dictShipJourneyFirst[dr["mmsi"].ToString()] = sj;
                     }
                     else
                     {
                         ShipJourney sj = new ShipJourney(dr["mmsi"].ToString(), dr["vsnm"].ToString(), dr["type"].ToString(), dr["class"].ToString());
-                        sj.addCoordinate(new Coordinate(float.Parse(dr["lat"].ToString()), float.Parse(dr["lng"].ToString()), currentTime.ToString("MM/dd/yyyy h:mm tt"),dr["sog"].ToString(),dr["cog"].ToString()));
+                        sj.addCoordinate(new Coordinate(
+                            float.Parse(dr["lat"].ToString()),
+                            float.Parse(dr["lng"].ToString()),
+                            currentTime.ToString("MM/dd/yyyy h:mm tt"),
+                            float.Parse(dr["sog"].ToString()),
+                            float.Parse(dr["cog"].ToString()),
+                            Convert.ToInt32(dr["lost"].ToString()),
+                            Convert.ToInt32(dr["min"].ToString())));
                         //add new ship to dict
                         dictShipJourneyFirst.Add(dr["mmsi"].ToString(), sj);
                     }
@@ -245,13 +259,27 @@ namespace AISTools
                             //add new coor into ship of dict
                             ShipJourney sj = new ShipJourney();
                             sj = dictShipJourneySecond[dr["mmsi"].ToString()];
-                            sj.ListCoor.Add(new Coordinate(float.Parse(dr["lat"].ToString()), float.Parse(dr["lng"].ToString()), currentTime.ToString("MM/dd/yyyy h:mm tt"), dr["sog"].ToString(), dr["cog"].ToString()));
+                            sj.ListCoor.Add(new Coordinate(
+                            float.Parse(dr["lat"].ToString()),
+                            float.Parse(dr["lng"].ToString()),
+                            currentTime.ToString("MM/dd/yyyy h:mm tt"),
+                            float.Parse(dr["sog"].ToString()),
+                            float.Parse(dr["cog"].ToString()),
+                            Convert.ToInt32(dr["lost"].ToString()),
+                            Convert.ToInt32(dr["min"].ToString())));
                             dictShipJourneySecond[dr["mmsi"].ToString()] = sj;
                         }
                         else
                         {
                             ShipJourney sj = new ShipJourney(dr["mmsi"].ToString(), dr["vsnm"].ToString(), dr["type"].ToString(), dr["class"].ToString());
-                            sj.addCoordinate(new Coordinate(float.Parse(dr["lat"].ToString()), float.Parse(dr["lng"].ToString()), currentTime.ToString("MM/dd/yyyy h:mm tt"), dr["sog"].ToString(), dr["cog"].ToString()));
+                            sj.addCoordinate(new Coordinate(
+                            float.Parse(dr["lat"].ToString()),
+                            float.Parse(dr["lng"].ToString()),
+                            currentTime.ToString("MM/dd/yyyy h:mm tt"),
+                            float.Parse(dr["sog"].ToString()),
+                            float.Parse(dr["cog"].ToString()),
+                            Convert.ToInt32(dr["lost"].ToString()),
+                            Convert.ToInt32(dr["min"].ToString())));
                             //add new ship to dict
                             dictShipJourneySecond.Add(dr["mmsi"].ToString(), sj);
 

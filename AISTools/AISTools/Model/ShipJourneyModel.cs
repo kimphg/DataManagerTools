@@ -39,6 +39,8 @@ namespace AISTools.Model
                     row["SOG"] = coor.sog;
                     row["COG"] = coor.cog;
                     row["TIME"] = coor.time;
+                    row["LOST"] = coor.lost;
+                    row["MIN"] = coor.min;
                     table.Rows.Add(row);
                 }
             }
@@ -48,6 +50,7 @@ namespace AISTools.Model
                 bulk.DestinationTableName = "SHIPJOURNEY";
                 bulk.WriteToServer(table);
             }
+            table.Clear();
         }
     }
 }
