@@ -15,8 +15,10 @@ CREATE TABLE SHIPJOURNEY(
 	MMSI VARCHAR(15),
 	LAT FLOAT,
 	LNG FLOAT,
-	SOG CHAR(20),
-	COG CHAR(20),
+	SOG FLOAT,
+	COG FLOAT,
+	MIN INT,
+	LOST INT,
 	TIME VARCHAR(20) 
 	PRIMARY KEY(MMSI,TIME)
 )
@@ -30,3 +32,5 @@ DROP TABLE SHIP
 use seamap
 select * from Ship 
 select * from ShipJourney
+
+delete from ShipJourney
