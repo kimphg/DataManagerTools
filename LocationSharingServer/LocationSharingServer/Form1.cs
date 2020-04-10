@@ -15,37 +15,7 @@ namespace LocationSharingServer
     using System;
     using System.Threading;
 
-    public class ServerListener
-    {
-        
-        public static string log = "";
-        public ServerListener()
-        {
-            
-        }
-        public static void Run()
-        {
-            IPEndPoint remoteEP;
-            UdpClient udpServer;
-            udpServer = new UdpClient(50000);
-            remoteEP = new IPEndPoint(IPAddress.Any, 0);
-            
-            log += "server start ok";
-            while (true)
-            {
-                Thread.Sleep(1000);
 
-                byte[] data = udpServer.Receive(ref remoteEP); // listen to packet
-                byte[] dataLon = { data[11], data[10], data[9], data[8] };
-                byte[] dataLat = { data[15], data[14], data[13], data[12] };
-                float mlong = System.BitConverter.ToSingle(dataLon, 8);
-                float mlat = System.BitConverter.ToSingle(dataLat, 12);
-                //udpServer.Send(new byte[] { 1 }, 1, remoteEP); // reply back
-                log += "\n"+remoteEP.Address.ToString() + ", long:" + mlong.ToString() + ", lat:" + mlat.ToString();
-            }
-            
-        }
-    }
     public partial class Form1 : Form
     {
 
@@ -56,15 +26,133 @@ namespace LocationSharingServer
             InitializeComponent();
             thread1 = new Thread(ServerListener.Run);
             thread1.Start();
-            
+            dataGridView1.DataSource = new BindingSource(new DictionaryAdapter(ServerListener.clientList), "");
         }
-        
+
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            richTextBox1.Text = ServerListener.log;
+            if (ServerListener.log.Count() > 0)
+
+            {
+                richTextBox1.Text = ServerListener.log;
+                ServerListener.log = "";
+            }
+            dataGridView1.Update();
+            
         }
+        private void  OnClosed()
+        {
+            ServerListener.toStop = true;
+        }
+
+
+    }
+    public struct LocationClient
+    {
+        public IPEndPoint mIP;
+        public float mLat, mLon;
+        public long mLastTimeSent;
+        public long mLastTimeRec;
+    }
+
+    public class ServerListener
+    {
+        static IPEndPoint remoteEP;
+        static IPEndPoint localUser;
+        static UdpClient udpServer;
+        public static string log = "";
+        internal static bool toStop = false;
+        public static Dictionary<IPEndPoint, LocationClient> clientList = new Dictionary<IPEndPoint, LocationClient>();
+        public static void Run()
+        {
+            
+            try
+            {
+                udpServer = new UdpClient(50000);
+                remoteEP = new IPEndPoint(IPAddress.Any, 0);
+                localUser = new IPEndPoint(IPAddress.Parse("192.168.0.66"), 21400);
+                log += "server start ok";
+                while (true)
+                {
+                    try
+                    {
+                        Thread.Sleep(200);
+                        if(toStop)break;
+                        byte[] data = udpServer.Receive(ref remoteEP); // listen to packet
+                        udpServer.Send(data, data.Count(), localUser);
+                        if (data.Length < 16) continue;
+                        Array.Reverse(data, 0, data.Length);
+                        LocationClient newclient = new LocationClient();
+                        newclient.mIP = remoteEP;
+                        newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                        newclient.mLon = System.BitConverter.ToSingle(data, 4);
+                        newclient.mLat = System.BitConverter.ToSingle(data, 0);
+                        newclient.mLastTimeSent = System.BitConverter.ToInt64(data, 8);
+                        clientList[newclient.mIP] = newclient;
+                        sendResToClient(remoteEP);
+                        log = "";
+                        foreach (var entry in clientList)
+                        {
+                            TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeSent);
+                            DateTime timeDate = new DateTime(1970, 1, 1) + time;
+
+                            log +=  entry.Value.mIP.Address.ToString()
+                                + ", long:" + entry.Value.mLon.ToString()
+                                + ", lat:" + entry.Value.mLat.ToString()
+                                + ", time:" + timeDate.ToString()+"\n";
+                        }
+                        
+                    }
+                    catch (Exception ex)
+                    {
+                        //log += "server start failed:" + ex.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log += "server start failed:" + ex.ToString();
+            }
+
+            
+
+
+        }
+        const int frameLen = 10;
+        const int numOfFrames = 20;
+        const int maxAgeSec = 600;
         
 
+        private static void sendResToClient(IPEndPoint ep)
+        {
+            byte[] data = new byte [frameLen* numOfFrames];
+            int indexStart = 0;
+            foreach(var entry in clientList)
+            {
+
+                if (entry.Key == ep) continue;
+                
+                byte[] lat = BitConverter.GetBytes(entry.Value.mLat);
+                byte[] lon = BitConverter.GetBytes(entry.Value.mLon);
+                short ageSec = (short)((((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds - entry.Value.mLastTimeRec)) / 1000);
+                if (ageSec > maxAgeSec) continue;
+                byte[] age = BitConverter.GetBytes(ageSec);
+                byte[] frame = new byte[frameLen];
+                Buffer.BlockCopy(age, 0, frame, 0, 2);
+                Buffer.BlockCopy(lat, 0, frame, 2, 4);
+                Buffer.BlockCopy(lon, 0, frame, 6, 4);
+                for (int i = 0; i < frameLen; i++)
+                {
+                    data[i+indexStart] = frame[frameLen-1 - i];
+                }
+                indexStart += frameLen;
+                if (indexStart > frameLen * (numOfFrames - 1)) break;
+                // frame 10 bytes: 2byte age in seconds, 4byte lon, 4byte lat
+            }
+            udpServer.Send(data, indexStart, ep); // reply back
+        }
+
+        
     }
 }
