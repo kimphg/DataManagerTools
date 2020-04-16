@@ -26,7 +26,7 @@ namespace LocationSharingServer
             InitializeComponent();
             thread1 = new Thread(ServerListener.Run);
             thread1.Start();
-            dataGridView1.DataSource = new BindingSource(new DictionaryAdapter(ServerListener.clientList), "");
+            //dataGridView1.DataSource = new BindingSource(new DictionaryAdapter(ServerListener.clientList), "");
         }
 
 
@@ -38,19 +38,20 @@ namespace LocationSharingServer
                 richTextBox1.Text = ServerListener.log;
                 ServerListener.log = "";
             }
-            dataGridView1.Update();
+            //dataGridView1.Update();
             
         }
         private void  OnClosed()
         {
             ServerListener.toStop = true;
+            
         }
 
 
     }
     public struct LocationClient
     {
-        public IPEndPoint mIP;
+        public IPAddress mIP;
         public float mLat, mLon;
         public long mLastTimeSent;
         public long mLastTimeRec;
@@ -63,7 +64,7 @@ namespace LocationSharingServer
         static UdpClient udpServer;
         public static string log = "";
         internal static bool toStop = false;
-        public static Dictionary<IPEndPoint, LocationClient> clientList = new Dictionary<IPEndPoint, LocationClient>();
+        public static Dictionary<IPAddress, LocationClient> clientList = new Dictionary<IPAddress, LocationClient>();
         public static void Run()
         {
             
@@ -84,7 +85,7 @@ namespace LocationSharingServer
                         if (data.Length < 16) continue;
                         Array.Reverse(data, 0, data.Length);
                         LocationClient newclient = new LocationClient();
-                        newclient.mIP = remoteEP;
+                        newclient.mIP = remoteEP.Address;
                         newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                         newclient.mLon = System.BitConverter.ToSingle(data, 4);
                         newclient.mLat = System.BitConverter.ToSingle(data, 0);
@@ -97,10 +98,10 @@ namespace LocationSharingServer
                             TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeSent);
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
 
-                            log +=  entry.Value.mIP.Address.ToString()
-                                + ", long:" + entry.Value.mLon.ToString()
-                                + ", lat:" + entry.Value.mLat.ToString()
-                                + ", time:" + timeDate.ToString()+"\n";
+                            log +=  entry.Value.mIP.ToString()
+                                + ", " + entry.Value.mLat.ToString()
+                                + ", " + entry.Value.mLon.ToString()
+                                + ", " + timeDate.ToString()+"\n";
                         }
                         
                     }
@@ -131,7 +132,7 @@ namespace LocationSharingServer
             foreach(var entry in clientList)
             {
 
-                if (entry.Key == ep) continue;
+                if (entry.Key == ep.Address) continue;
                 
                 byte[] lat = BitConverter.GetBytes(entry.Value.mLat);
                 byte[] lon = BitConverter.GetBytes(entry.Value.mLon);
