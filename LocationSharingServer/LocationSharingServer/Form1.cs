@@ -55,6 +55,7 @@ namespace LocationSharingServer
         public float mLat, mLon;
         public long mLastTimeSent;
         public long mLastTimeRec;
+        public int msgCount;
     }
 
     public class ServerListener
@@ -90,18 +91,30 @@ namespace LocationSharingServer
                         newclient.mLon = System.BitConverter.ToSingle(data, 4);
                         newclient.mLat = System.BitConverter.ToSingle(data, 0);
                         newclient.mLastTimeSent = System.BitConverter.ToInt64(data, 8);
+                        if (clientList.ContainsKey(newclient.mIP))
+                        {
+                            newclient.msgCount = clientList[newclient.mIP].msgCount + 1;
+                        }
+                        else
+                            newclient.msgCount = 1;
                         clientList[newclient.mIP] = newclient;
                         sendResToClient(remoteEP);
                         log = "";
                         foreach (var entry in clientList)
                         {
-                            TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeSent);
+                            TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeSent+ 25200000);
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
-
-                            log +=  entry.Value.mIP.ToString()
-                                + ", " + entry.Value.mLat.ToString()
-                                + ", " + entry.Value.mLon.ToString()
-                                + ", " + timeDate.ToString()+"\n";
+                            string newline = "";
+                            newline += entry.Value.mIP.ToString();
+                            while (newline.Length < 20) newline += " ";
+                            newline += entry.Value.mLat.ToString();
+                            while (newline.Length < 30) newline += " ";
+                            newline += entry.Value.mLon.ToString();
+                            while (newline.Length < 40) newline += " ";
+                            newline += entry.Value.msgCount.ToString();
+                            while (newline.Length < 45) newline += " ";
+                            newline += timeDate.ToString()+"\n";
+                            log += newline;
                         }
                         
                     }
