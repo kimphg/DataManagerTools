@@ -106,13 +106,13 @@ namespace LocationSharingServer
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
                             newline += entry.Value.mIP.ToString();
-                            while (newline.Length < 20) newline += " ";
+                            while (newline.Length < 20) newline += "_";
                             newline += entry.Value.mLat.ToString();
-                            while (newline.Length < 30) newline += " ";
+                            while (newline.Length < 30) newline += "_";
                             newline += entry.Value.mLon.ToString();
-                            while (newline.Length < 40) newline += " ";
+                            while (newline.Length < 40) newline += "_";
                             newline += entry.Value.msgCount.ToString();
-                            while (newline.Length < 45) newline += " ";
+                            while (newline.Length < 45) newline += "_";
                             newline += timeDate.ToString()+"\n";
                             log += newline;
                         }

@@ -8,6 +8,7 @@ namespace AISTools.Model
 {
     class ConnectionString
     {
-        public static string connectionString = @"Data Source=HUYHOANG;Initial Catalog=seamap;Integrated Security=True";
+        //@"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
+        public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
     }
 }

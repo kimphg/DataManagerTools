@@ -1,36 +1,31 @@
 ﻿using ReadFileJsonFirst.Object;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using System.IO;
-using Newtonsoft.Json.Linq;
-using System.Security;
 using System.Threading;
-
+using System.Data.SqlClient;
 namespace ReadFileJsonFirst
 {
     public partial class Form1 : Form
     {
+
         DateTime timeStart;
         List<Thread> threads = new List<Thread>();
         Mutex mutex = new Mutex();
         Random random = new Random();
-        Dictionary<Int32, Dictionary<Int32, Int32>> densityMap = new Dictionary<Int32, Dictionary<Int32, Int32>>();
-
-        private string strSource;
-        private int countProcessedFiles;
+        //Dictionary<Int32, Dictionary<Int32, Int32>> densityMap = new Dictionary<Int32, Dictionary<Int32, Int32>>();
+        public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
+        //private string strSource;
+        private int countShips;
         public Form1()
         {
             InitializeComponent();
             timer1.Interval = 2000;
-            
+            HandlingCoordinates.nameFileSource = "density.txt";
           //  test();
         }
        
@@ -73,33 +68,52 @@ namespace ReadFileJsonFirst
         /*
          Quy trình chọn file mật độ -> chọn file lưu -> kiểm tra từng toạ độ 1
              */
+        public List<string> getShipList()
+        {
+            var table = new DataTable();
+            using (var adapter = new SqlDataAdapter($"SELECT MMSI FROM SHIP", connectionString))
+            {
+                adapter.Fill(table);
+            };
+            List<string> list = table.AsEnumerable()
+                                   .Select(r => r.Field<string>("MMSI"))
+                                   .ToList();
+            return list;
+        }
+        private DataTable getShipData(string mmsi)
+        {
+            var table = new DataTable();
+            using (var adapter = new SqlDataAdapter($" select [LAT],[LNG],[COG],[TIME] from SHIPJOURNEY where SOG > 1 and MMSI like "+ mmsi, connectionString))
+            {
+                adapter.Fill(table);
+            };
+            return table;
+        }
+        public List<string> listShips;
         private void btn_start_Click(object sender, EventArgs e)
         {
+            listShips = getShipList();
+            //DataTable data = getAll();
+            
             try
             {
-                strSource = txt_pathfd.Text;
-
-                progress.Maximum = 100;
                 progress.Value = 0;
-                List<string> files = new List<string> ();
-                DirectorySearchFile(strSource, files);
-
-                progress.Maximum = files.Count;
-
-                Thread t = new Thread(new ThreadStart(() => createThread(files)));
+                progress.Maximum = listShips.Count;
+                countShips = 0;
+                Thread t = new Thread(new ThreadStart(() => createThread(listShips)));
                 t.Start();
                 timer1.Start();
                 timeStart = DateTime.UtcNow;
-                countProcessedFiles = 0;
+                
 
             } catch (Exception )
             {
                 MessageBox.Show("Error ! Reset application");
             }
-           
+
         }
 
-        private void createThread(List<string> files )
+        private void createThread(List<string> ships )
         {
             int numThread = 16;
             // txt_numThread.Text = numThread.ToString();
@@ -110,7 +124,7 @@ namespace ReadFileJsonFirst
 
             for (int i = 1; i <= numThread; i++)
             {
-                Thread t = new Thread(new ThreadStart(() => setThreadToFile(i, files, numThread)));
+                Thread t = new Thread(new ThreadStart(() => setThreadToFile(i, ships, numThread)));
                 t.Start();
                 threads.Add(t);
 
@@ -125,23 +139,49 @@ namespace ReadFileJsonFirst
 
         }
         
-        private void setThreadToFile(int hashcode, List<string> files, int numThread)
+        private void setThreadToFile(int hashcode, List<string> ships , int numThread)
         {
             
-            for (int i = hashcode; i <= files.Count; i += numThread)
+            for (int i = hashcode; i < ships.Count; i += numThread)
             {
-                
-                handlingFile(files[i - 1]);
+
+                processShip(ships[i]);
+                countShips++;
             }
         }
-        private void handlingFile(string filename )
+
+        private void processShip(string mmsi)
         {
+            DataTable data =  getShipData(mmsi);
+            int numOfRows = data.Rows.Count;
+            if (numOfRows < 2) return;
+            for (int i = 0;i< numOfRows - 1;i++)
+            {
+                DataRow row1 = data.Rows[i];
+                DataRow row2 = data.Rows[i+1];
+                double lat1 = (double)row1[0];
+                double lat2 = (double)row2[0];
+                double lon1 = (double)row1[1];
+                double lon2 = (double)row2[1];
+                //lat,long,cog,time
+                //double lat1 = (double)row1.ItemArray[0];
+                double distance = GeoOperations.DistanceTo(lat1,lon1,lat2,lon2);
+                double turnAngle = Math.Abs((double)row1[2] - (double)row2[2]);
+                if (turnAngle > 180) turnAngle -= 180;
+                
+                //HandlingCoordinates.checkCoordinate(lat1,lon1);
+                if (distance<10 && distance > 0.1 && turnAngle < 10)
+                {
+                    mutex.WaitOne();
+                    HandlingCoordinates.AddLine(lat1, lon1,lat2,lon2);
+                    mutex.ReleaseMutex();
+                }
+                
+
+
+            }
             
-            mutex.WaitOne();
-            HandlingCoordinates handlingCoordinates = new HandlingCoordinates(filename);
-            handlingCoordinates.checkCoordinate(densityMap);
-            countProcessedFiles++;
-            mutex.ReleaseMutex();
+            
         }
         private void DirectorySearchFile(string sDir, List<string> files)
         {
@@ -168,13 +208,13 @@ namespace ReadFileJsonFirst
         }
         private void updateProgress()
         {
-            if (countProcessedFiles < progress.Maximum)
+            if (countShips < progress.Maximum)
             {
-                progress.Value = countProcessedFiles;
+                progress.Value = countShips;
                 double timeSec = DateTime.UtcNow.Subtract(timeStart).TotalSeconds + 1;
-                label3.Text = countProcessedFiles.ToString() + "/" + progress.Maximum.ToString() + 
+                label3.Text = countShips.ToString() + "/" + progress.Maximum.ToString() + 
                     " time:" + (timeSec.ToString("0.##")) + 
-                    " Files per sec:" + (countProcessedFiles / timeSec).ToString("0.##");
+                    " Files per sec:" + (countShips / timeSec).ToString("0.##");
             }
         }
         private void stop()
@@ -204,7 +244,7 @@ namespace ReadFileJsonFirst
 
         private void saveDictionaryToFile()
         {
-            JsonTools.writeFile( txt_fd_density.Text +"\\density.json", JsonConvert.SerializeObject(densityMap, Formatting.Indented));
+            JsonTools.writeFile( txt_fd_density.Text +"D:\\Phuong\\density.json", JsonConvert.SerializeObject(HandlingCoordinates.densityMap, Formatting.Indented));
             
         }
 
