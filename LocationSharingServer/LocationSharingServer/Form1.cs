@@ -13,6 +13,7 @@ using System.Windows.Forms;
 namespace LocationSharingServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
 
 
@@ -43,11 +44,17 @@ namespace LocationSharingServer
         }
         private void  OnClosed()
         {
-            ServerListener.toStop = true;
+            
             
         }
+        private void FormClosing(Object sender, FormClosingEventArgs e)
+        {
+            ServerListener.toStop = true;
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
 
-
+        }
     }
     public struct LocationClient
     {
@@ -97,7 +104,8 @@ namespace LocationSharingServer
                         }
                         else
                             newclient.msgCount = 1;
-                        clientList[newclient.mIP] = newclient;
+                        AddLocationClient(newclient);
+                        
                         sendResToClient(remoteEP);
                         log = "";
                         foreach (var entry in clientList)
@@ -136,8 +144,32 @@ namespace LocationSharingServer
         const int frameLen = 10;
         const int numOfFrames = 20;
         const int maxAgeSec = 600;
-        
+        public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
 
+        public static void AddLocationClient(LocationClient newclient)
+        {
+            
+            clientList[newclient.mIP] = newclient;
+            if (newclient.mIP == IPAddress.Parse("27.72.56.161")) return;
+            var table = new DataTable();
+            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[LOCATION_RECORD]", connectionString))
+            {
+                adapter.Fill(table);
+            };
+            var row = table.NewRow();
+            row["IP"] = newclient.mIP.ToString();
+            row["LAT"] = newclient.mLat;
+            row["LNG"] = newclient.mLon;
+            row["TIME"] = DateTime.Now.ToString("MM/dd/yyyy h:mm tt");
+            table.Rows.Add(row);
+
+            using (var bulk = new SqlBulkCopy(connectionString))
+            {
+                bulk.DestinationTableName = "LOCATION_RECORD";
+                bulk.WriteToServer(table);
+            }
+            table.Clear();
+        }
         private static void sendResToClient(IPEndPoint ep)
         {
             byte[] data = new byte [frameLen* numOfFrames];
