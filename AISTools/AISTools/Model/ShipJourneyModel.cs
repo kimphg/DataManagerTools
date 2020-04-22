@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -44,11 +45,16 @@ namespace AISTools.Model
                     table.Rows.Add(row);
                 }
             }
-           
-            using (var bulk = new SqlBulkCopy(ConnectionString.connectionString))
+            try
             {
-                bulk.DestinationTableName = "SHIPJOURNEY";
-                bulk.WriteToServer(table);
+                using (var bulk = new SqlBulkCopy(ConnectionString.connectionString))
+                {
+                    bulk.DestinationTableName = "SHIPJOURNEY";
+                    bulk.WriteToServer(table);
+                }
+            }
+            catch (Exception e)
+            {
             }
             table.Clear();
         }

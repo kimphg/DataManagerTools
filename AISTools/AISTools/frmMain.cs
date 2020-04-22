@@ -168,7 +168,7 @@ namespace AISTools
         //request get data from server
         private void sendRequestAsync()
         {
-            RequestShip request = new RequestShip(GlobalVar.url);
+            RequestShip request = new RequestShip(GlobalVar.urlAll);
             currentTime = DateTime.Now;
             ThreadHelper.SetText(this, txt_dem, dem.ToString());
             if (request.getType() != "null")

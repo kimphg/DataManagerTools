@@ -59,6 +59,7 @@ namespace LocationSharingServer
     public struct LocationClient
     {
         public IPAddress mIP;
+        public string dev;
         public float mLat, mLon;
         public long mLastTimeSent;
         public long mLastTimeRec;
@@ -90,23 +91,36 @@ namespace LocationSharingServer
                         if(toStop)break;
                         byte[] data = udpServer.Receive(ref remoteEP); // listen to packet
                         udpServer.Send(data, data.Count(), localUser);
-                        if (data.Length < 16) continue;
-                        Array.Reverse(data, 0, data.Length);
-                        LocationClient newclient = new LocationClient();
-                        newclient.mIP = remoteEP.Address;
-                        newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
-                        newclient.mLon = System.BitConverter.ToSingle(data, 4);
-                        newclient.mLat = System.BitConverter.ToSingle(data, 0);
-                        newclient.mLastTimeSent = System.BitConverter.ToInt64(data, 8);
-                        if (clientList.ContainsKey(newclient.mIP))
+                        if (data.Length == 16)
                         {
-                            newclient.msgCount = clientList[newclient.mIP].msgCount + 1;
+                            Array.Reverse(data, 0, data.Length);
+                            LocationClient newclient = new LocationClient();
+                            newclient.mIP = remoteEP.Address;
+                            newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                            newclient.mLon = System.BitConverter.ToSingle(data, 4);
+                            newclient.mLat = System.BitConverter.ToSingle(data, 0);
+                            newclient.mLastTimeSent = System.BitConverter.ToInt64(data, 8);
+                            if (clientList.ContainsKey(newclient.mIP))
+                            {
+                                newclient.msgCount = clientList[newclient.mIP].msgCount + 1;
+                                newclient.dev = clientList[newclient.mIP].dev;
+                            }
+                            else
+                                newclient.msgCount = 1;
+                            AddLocationClient(newclient);
+                            sendResToClient(remoteEP);
                         }
-                        else
-                            newclient.msgCount = 1;
-                        AddLocationClient(newclient);
-                        
-                        sendResToClient(remoteEP);
+                        else if (data.Length == 20)
+                        {
+                            LocationClient newclient = new LocationClient();
+                            newclient.mIP = remoteEP.Address;
+                            newclient.mLon = 0;
+                            newclient.mLat = 0;
+                            newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                            newclient.dev = System.Text.Encoding.UTF8.GetString(data);
+                            AddLocationClient(newclient);
+                            sendResToClient(remoteEP);
+                        }
                         log = "";
                         foreach (var entry in clientList)
                         {
@@ -115,12 +129,14 @@ namespace LocationSharingServer
                             string newline = "";
                             newline += entry.Value.mIP.ToString();
                             while (newline.Length < 20) newline += "_";
-                            newline += entry.Value.mLat.ToString();
-                            while (newline.Length < 30) newline += "_";
-                            newline += entry.Value.mLon.ToString();
+                            newline += entry.Value.dev;
                             while (newline.Length < 40) newline += "_";
+                            newline += entry.Value.mLat.ToString();
+                            while (newline.Length < 50) newline += "_";
+                            newline += entry.Value.mLon.ToString();
+                            while (newline.Length < 60) newline += "_";
                             newline += entry.Value.msgCount.ToString();
-                            while (newline.Length < 45) newline += "_";
+                            while (newline.Length < 65) newline += "_";
                             newline += timeDate.ToString()+"\n";
                             log += newline;
                         }
@@ -150,7 +166,7 @@ namespace LocationSharingServer
         {
             
             clientList[newclient.mIP] = newclient;
-            if (newclient.mIP == IPAddress.Parse("27.72.56.161")) return;
+            if (newclient.mIP.Equals(IPAddress.Parse("27.72.56.161"))) return;
             var table = new DataTable();
             using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[LOCATION_RECORD]", connectionString))
             {
@@ -159,6 +175,7 @@ namespace LocationSharingServer
             var row = table.NewRow();
             row["IP"] = newclient.mIP.ToString();
             row["LAT"] = newclient.mLat;
+            row["DEV"] = newclient.dev;
             row["LNG"] = newclient.mLon;
             row["TIME"] = DateTime.Now.ToString("MM/dd/yyyy h:mm tt");
             table.Rows.Add(row);
