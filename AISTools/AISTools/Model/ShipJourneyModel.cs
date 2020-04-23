@@ -17,11 +17,11 @@ namespace AISTools.Model
            
         }
        
-        public void Insert(Dictionary<string, Object.ShipJourney> dict)
+        public bool Insert(Dictionary<string, Object.ShipJourney> dict)
         {
-            BulkCopy(dict);
+            return BulkCopy(dict);
         }
-        public void BulkCopy(Dictionary<string, Object.ShipJourney> dict)
+        public bool BulkCopy(Dictionary<string, Object.ShipJourney> dict)
         {
             var table = new DataTable();
             using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM ShipJourney", ConnectionString.connectionString))
@@ -55,8 +55,11 @@ namespace AISTools.Model
             }
             catch (Exception e)
             {
+                return false;
             }
             table.Clear();
+            return true;
         }
+        
     }
 }

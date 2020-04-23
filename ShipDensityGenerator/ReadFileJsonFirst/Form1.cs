@@ -82,12 +82,33 @@ namespace ReadFileJsonFirst
         }
         private DataTable getShipData(string mmsi)
         {
-            var table = new DataTable();
-            using (var adapter = new SqlDataAdapter($" select [LAT],[LNG],[SOG],[COG],[TIME] from SHIPJOURNEY where SOG > 1 and MMSI like "+ mmsi, connectionString))
+            try
             {
-                adapter.Fill(table);
-            };
-            return table;
+                var table = new DataTable();
+                using (var adapter = new SqlDataAdapter($" select [LAT],[LNG],[SOG],[COG],[TIME] from SHIPJOURNEY where SOG > 1 and MMSI like " + mmsi, connectionString))
+                {
+                    adapter.Fill(table);
+                };
+                return table;
+            }
+            catch (Exception e)
+            {
+                //retry
+                try
+                {
+                    var table = new DataTable();
+                    using (var adapter = new SqlDataAdapter($" select [LAT],[LNG],[SOG],[COG],[TIME] from SHIPJOURNEY where SOG > 1 and MMSI like " + mmsi, connectionString))
+                    {
+                        adapter.Fill(table);
+                    };
+                    return table;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("QSL Server timeout error");
+                    return null;
+                }
+            }
         }
         public List<string> listShips;
         private void btn_start_Click(object sender, EventArgs e)
@@ -153,6 +174,7 @@ namespace ReadFileJsonFirst
         private void processShip(string mmsi)
         {
             DataTable data =  getShipData(mmsi);
+            if (data == null) return;
             int numOfRows = data.Rows.Count;
             if (numOfRows < 2) return;
             for (int i = 0;i< numOfRows - 1;i++)
@@ -165,6 +187,7 @@ namespace ReadFileJsonFirst
                 double lon2 = (double)row2[1];
                 //lat,long,sog,cog,time
                 //double lat1 = (double)row1.ItemArray[0];
+
                 double distance = GeoOperations.DistanceTo(lat1,lon1,lat2,lon2);
                 double turnAngle = Math.Abs((double)row1[3] - (double)row2[3]);
                 if (turnAngle > 180) turnAngle -= 180;

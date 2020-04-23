@@ -118,6 +118,7 @@ namespace LocationSharingServer
                             newclient.mLat = 0;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             newclient.dev = System.Text.Encoding.UTF8.GetString(data);
+                            newclient.dev.Replace('\0', '_');
                             AddLocationClient(newclient);
                             sendResToClient(remoteEP);
                         }
@@ -144,7 +145,7 @@ namespace LocationSharingServer
                     }
                     catch (Exception ex)
                     {
-                        //log += "server start failed:" + ex.ToString();
+                        log += "server failed:" + ex.ToString();
                     }
                 }
             }

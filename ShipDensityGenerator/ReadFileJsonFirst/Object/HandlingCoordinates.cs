@@ -84,7 +84,7 @@ namespace ReadFileJsonFirst.Object
             }
             double dx = (lat2 - lat1);
             double dy = (lon2 - lon1);
-            if (dx != 0)
+            if (dx != 0)//chia 2 truong hop de tranh bi chia cho 0
             {
                 for (double x = lat1; x <= lat2; x+=0.001)
                 {

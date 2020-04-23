@@ -121,7 +121,7 @@ namespace AISTools
                 {
                     modeChooseDictSaveFileFirst = false;
                     modeChooseDictSaveFileSecond = true;
-                    SetText("\n" + "Mode 1" + " \n");
+                    //SetText("\n" + "Mode 1" + " \n");
                     savetoDatabase(dictShipJourneyFirst,"mode 1");
 
                 }
@@ -130,7 +130,7 @@ namespace AISTools
                 {
                     modeChooseDictSaveFileFirst = true;
                     modeChooseDictSaveFileSecond =false;
-                    SetText("\n" + "Mode 2" + " \n");
+                    //SetText("\n" + "Mode 2" + " \n");
                     savetoDatabase(dictShipJourneySecond,"mode 2");
                 }
                 saveAvaiable = true;
@@ -142,10 +142,11 @@ namespace AISTools
             SetText("\n" + "Saving database ... \n");
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            journeymodel.Insert(dict);
+            bool sucess = journeymodel.Insert(dict);
             stopWatch.Stop();
             TimeSpan ts = stopWatch.Elapsed;
-            SetText("\n" + "Success !  "+ String.Format("{0:00}:{1:00}:{2:00}.{3:00}",ts.Hours, ts.Minutes, ts.Seconds,ts.Milliseconds / 10) +"\n");
+            if (sucess) SetText("\n" + "Success !  " + String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10) + "\n");
+            else SetText("\n" + "Saving to database failed ! \n ");
             dict.Clear();
         }
    
