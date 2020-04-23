@@ -117,8 +117,12 @@ namespace LocationSharingServer
                             newclient.mLon = 0;
                             newclient.mLat = 0;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                            
+                            for (int i =0;i<data.Length;i++)
+                            {
+                                if (data[i] == 0) data[i] = (byte)'_';
+                            }
                             newclient.dev = System.Text.Encoding.UTF8.GetString(data);
-                            newclient.dev.Replace('\0', '_');
                             AddLocationClient(newclient);
                             sendResToClient(remoteEP);
                         }

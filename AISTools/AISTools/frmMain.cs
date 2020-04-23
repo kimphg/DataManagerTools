@@ -80,40 +80,13 @@ namespace AISTools
         //timer tick save file
         private void timerAutoSave_Tick(object sender, EventArgs e)
         {
-            
-            /*
-                if (dictAvaiable && saveAvaiable)
-                {
 
-                    saveAvaiable = false;
-
-                    foreach (var item in dictShipJourney.Values.ToList())
-                    {
-                        //ShipModel model = new ShipModel();
-                        //model.insert(item.Mmsi, item.Vsnm,Convert.ToInt32(item.Type), "B");
-                        //foreach(var coor in item.ListCoor)
-                        //{
-                        //    ShipJourneyModel modelSj = new ShipJourneyModel();
-                        //    modelSj.insert(item.Mmsi, coor.lat, coor.lng, "", "", coor.time);
-
-                        //}
-
-                        //check mmsi
-                        if (!GlobalVar.hashMMSI.Contains(item.Mmsi))
-                        {
-                            model.insert(item.Mmsi, item.Vsnm,Convert.ToInt32(item.Type), "B");
-                            GlobalVar.hashMMSI.Add(item.Mmsi);
-                        }
-
-                        string temp = "Ship " + item.Mmsi +" is saving..." ;
-                        SetText("\n" + temp + " \n");
-                    }
+            savetoDatabase();
 
 
-
-                    saveAvaiable = true;
-                }
-            */
+        }
+        private void savetoDatabase(bool onlymove =true)
+        {
             if (dictAvaiable && saveAvaiable)
             {
                 saveAvaiable = false;
@@ -122,32 +95,36 @@ namespace AISTools
                     modeChooseDictSaveFileFirst = false;
                     modeChooseDictSaveFileSecond = true;
                     //SetText("\n" + "Mode 1" + " \n");
-                    savetoDatabase(dictShipJourneyFirst,"mode 1");
+                    savetoDatabase(dictShipJourneyFirst, "mode 1", onlymove);
 
                 }
                 // luu file dictJourneySecond
                 else
                 {
                     modeChooseDictSaveFileFirst = true;
-                    modeChooseDictSaveFileSecond =false;
+                    modeChooseDictSaveFileSecond = false;
                     //SetText("\n" + "Mode 2" + " \n");
-                    savetoDatabase(dictShipJourneySecond,"mode 2");
+                    savetoDatabase(dictShipJourneySecond, "mode 2", onlymove);
                 }
                 saveAvaiable = true;
             }
         }
-        private void savetoDatabase(Dictionary<string,ShipJourney> dict,string mode)
+        private void savetoDatabase(Dictionary<string,ShipJourney> dict,string mode,bool onlymove)
         {
 
             SetText("\n" + "Saving database ... \n");
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            bool sucess = journeymodel.Insert(dict);
+            int sucess = journeymodel.Insert(dict, onlymove);
             stopWatch.Stop();
             TimeSpan ts = stopWatch.Elapsed;
-            if (sucess) SetText("\n" + "Success !  " + String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10) + "\n");
+            if (sucess>0)
+            {
+                SetText("\n" + "Success! " +sucess.ToString()+ String.Format(" time:{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10) + "\n");
+                dict.Clear();
+            }
             else SetText("\n" + "Saving to database failed ! \n ");
-            dict.Clear();
+            
         }
    
         private void timerNow_Tick(object sender, EventArgs e)
@@ -372,6 +349,11 @@ namespace AISTools
             }
 
           
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            savetoDatabase(true);
         }
         //click save bouy from dict
         /*
