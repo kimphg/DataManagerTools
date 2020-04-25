@@ -19,7 +19,7 @@ namespace LocationSharingServer
 
     public partial class Form1 : Form
     {
-
+        //public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";//
 
         Thread thread1;
         public Form1()
@@ -55,6 +55,11 @@ namespace LocationSharingServer
         {
 
         }
+       
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+           
+        }
     }
     public struct LocationClient
     {
@@ -68,14 +73,18 @@ namespace LocationSharingServer
 
     public class ServerListener
     {
+        private static Timer timer20s;
         static IPEndPoint remoteEP;
         static IPEndPoint localUser;
         static UdpClient udpServer;
         public static string log = "";
         internal static bool toStop = false;
         public static Dictionary<IPAddress, LocationClient> clientList = new Dictionary<IPAddress, LocationClient>();
+        public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
+        private static DataTable shipList = new DataTable();
         public static void Run()
         {
+            timer20s = new Timer(timer20sTick, new AutoResetEvent(true),0,20000);
             
             try
             {
@@ -108,7 +117,7 @@ namespace LocationSharingServer
                             else
                                 newclient.msgCount = 1;
                             AddLocationClient(newclient);
-                            sendResToClient(remoteEP);
+                            sendResToClient(remoteEP,newclient.mLat,newclient.mLon);
                         }
                         else if (data.Length == 20)
                         {
@@ -124,7 +133,7 @@ namespace LocationSharingServer
                             }
                             newclient.dev = System.Text.Encoding.UTF8.GetString(data);
                             AddLocationClient(newclient);
-                            sendResToClient(remoteEP);
+                            //sendResToClient(remoteEP);
                         }
                         log = "";
                         foreach (var entry in clientList)
@@ -162,10 +171,30 @@ namespace LocationSharingServer
 
 
         }
+
+        private static void timer20sTick(object state)
+        {
+            try
+            {
+                string time = ((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds-60000).ToString();
+
+                using (var adapter = new SqlDataAdapter($" select [LAT],[LON],[SOG],[COG] from SHIP_LIST where [TIME]> " + time +" AND [TYPE] != '-2'", connectionString))
+                {
+
+                    adapter.Fill(shipList);
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+        }
+
         const int frameLen = 10;
-        const int numOfFrames = 20;
+        const int MAX_FRAMES_OUTPUT = 500;
         const int maxAgeSec = 600;
-        public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
+        
 
         public static void AddLocationClient(LocationClient newclient)
         {
@@ -192,31 +221,40 @@ namespace LocationSharingServer
             }
             table.Clear();
         }
-        private static void sendResToClient(IPEndPoint ep)
+        private static void sendResToClient(IPEndPoint ep, double clat,double clon)
         {
-            byte[] data = new byte [frameLen* numOfFrames];
+            byte[] data = new byte [frameLen* MAX_FRAMES_OUTPUT];
             int indexStart = 0;
-            foreach(var entry in clientList)
+            foreach(DataRow dr in shipList.Rows)
             {
 
-                if (entry.Key == ep.Address) continue;
-                
-                byte[] lat = BitConverter.GetBytes(entry.Value.mLat);
-                byte[] lon = BitConverter.GetBytes(entry.Value.mLon);
-                short ageSec = (short)((((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds - entry.Value.mLastTimeRec)) / 1000);
-                if (ageSec > maxAgeSec) continue;
-                byte[] age = BitConverter.GetBytes(ageSec);
-                byte[] frame = new byte[frameLen];
-                Buffer.BlockCopy(age, 0, frame, 0, 2);
-                Buffer.BlockCopy(lat, 0, frame, 2, 4);
-                Buffer.BlockCopy(lon, 0, frame, 6, 4);
-                for (int i = 0; i < frameLen; i++)
+                //if(abs(clat-dr["LAT"])>1.0)
+                try
                 {
-                    data[i+indexStart] = frame[frameLen-1 - i];
+                    float lat = float.Parse(dr["LAT"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
+                    float lon = float.Parse(dr["LON"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
+                    if (Math.Abs(clat - lat) > 0.3 || Math.Abs(clon - lon) > 0.3) continue;
+                    byte[] blat = BitConverter.GetBytes(lat);
+                    byte[] blon = BitConverter.GetBytes(lon);
+                    //short ageSec = (short)((((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds - entry.Value.mLastTimeRec)) / 1000);
+                    //if (ageSec > maxAgeSec) continue;
+                    byte[] bcog = BitConverter.GetBytes(Convert.ToInt16(float.Parse(dr["COG"].ToString())));
+                    byte[] frame = new byte[frameLen];
+                    Buffer.BlockCopy(bcog, 0, frame, 0, 2);
+                    Buffer.BlockCopy(blat, 0, frame, 2, 4);
+                    Buffer.BlockCopy(blon, 0, frame, 6, 4);
+                    for (int i = 0; i < frameLen; i++)
+                    {
+                        data[i + indexStart] = frame[frameLen - 1 - i];
+                    }
+                    indexStart += frameLen;
+                    if (indexStart > frameLen * (MAX_FRAMES_OUTPUT - 1)) break;
+                    // frame 10 bytes: 2byte age in seconds, 4byte lon, 4byte lat
                 }
-                indexStart += frameLen;
-                if (indexStart > frameLen * (numOfFrames - 1)) break;
-                // frame 10 bytes: 2byte age in seconds, 4byte lon, 4byte lat
+                catch (Exception ex)
+                {
+                    continue;
+                }
             }
             udpServer.Send(data, indexStart, ep); // reply back
         }
