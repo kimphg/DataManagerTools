@@ -17,11 +17,11 @@ namespace AISTools.Model
            
         }
        
-        public int Insert(Dictionary<string, Object.ShipJourney> dict, bool onlymove)
+        public int Insert(Dictionary<string, Object.ShipJourney> dict, double minspeed)
         {
-            return BulkCopy(dict, onlymove);
+            return BulkCopy(dict, minspeed);
         }
-        public int BulkCopy(Dictionary<string, Object.ShipJourney> dict,bool onlymove)
+        public int BulkCopy(Dictionary<string, Object.ShipJourney> dict, double minspeed)
         {
             int count = 0;
             var table = new DataTable();
@@ -40,7 +40,7 @@ namespace AISTools.Model
                     row["LAT"] = coor.lat;
                     row["LNG"] = coor.lng;
                     row["SOG"] = coor.sog;
-                    if (onlymove && coor.sog < 1.0) continue;
+                    if (Math.Abs(coor.sog) < minspeed) continue;
                     row["COG"] = coor.cog;
                     row["TIME"] = coor.time;
                     row["LOST"] = coor.lost;

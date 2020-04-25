@@ -19,7 +19,7 @@ namespace AISTools
     {
         DateTime timeBegin;
         System.Timers.Timer timerNow = new System.Timers.Timer();
-        System.Timers.Timer timerAutoSave = new System.Timers.Timer();
+        //System.Timers.Timer timerAutoSave = new System.Timers.Timer();
         Dictionary<string, ShipJourney> dictShipJourney = new Dictionary<string, ShipJourney>();
         int dem = 0;
         ShipModel shipmodel = new ShipModel();
@@ -62,9 +62,9 @@ namespace AISTools
             timerNow.Elapsed += timerNow_Tick;
             timerNow.Start();
 
-            timerAutoSave.Interval = GlobalVar.TIME_SAVE;//set time auto save
-            timerAutoSave.Elapsed += timerAutoSave_Tick;
-            timerAutoSave.Start();
+            //timerAutoSave.Interval = GlobalVar.TIME_SAVE;//set time auto save
+            //timerAutoSave.Elapsed += timerAutoSave_Tick;
+            //timerAutoSave.Start();
 
             timerTask.Start();
         }
@@ -78,14 +78,8 @@ namespace AISTools
         bool saveAvaiable = true;
 
         //timer tick save file
-        private void timerAutoSave_Tick(object sender, EventArgs e)
-        {
-
-            savetoDatabase();
-
-
-        }
-        private void savetoDatabase(bool onlymove =true)
+        
+        private void savetoDatabase(double minspeed =0.0)
         {
             if (dictAvaiable && saveAvaiable)
             {
@@ -95,7 +89,7 @@ namespace AISTools
                     modeChooseDictSaveFileFirst = false;
                     modeChooseDictSaveFileSecond = true;
                     //SetText("\n" + "Mode 1" + " \n");
-                    savetoDatabase(dictShipJourneyFirst, "mode 1", onlymove);
+                    savetoDatabase(dictShipJourneyFirst, "mode 1", minspeed);
 
                 }
                 // luu file dictJourneySecond
@@ -104,18 +98,18 @@ namespace AISTools
                     modeChooseDictSaveFileFirst = true;
                     modeChooseDictSaveFileSecond = false;
                     //SetText("\n" + "Mode 2" + " \n");
-                    savetoDatabase(dictShipJourneySecond, "mode 2", onlymove);
+                    savetoDatabase(dictShipJourneySecond, "mode 2", minspeed);
                 }
                 saveAvaiable = true;
             }
         }
-        private void savetoDatabase(Dictionary<string,ShipJourney> dict,string mode,bool onlymove)
+        private void savetoDatabase(Dictionary<string,ShipJourney> dict,string mode,double minspeed)
         {
 
             SetText("\n" + "Saving database ... \n");
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            int sucess = journeymodel.Insert(dict, onlymove);
+            int sucess = journeymodel.Insert(dict, minspeed);
             stopWatch.Stop();
             TimeSpan ts = stopWatch.Elapsed;
             if (sucess>0)
@@ -138,7 +132,7 @@ namespace AISTools
         delegate void SetTextCallback(string text);
         private void timerTask_Tick(object sender, EventArgs e)
         {
-            dem++;
+            
             Task task = new Task(sendRequestAsync);
             task.Start();
         }
@@ -267,8 +261,16 @@ namespace AISTools
                 }
             }
             dictAvaiable = true;
+            saveDictToSQL();
         }
-
+        private void saveDictToSQL()
+        {
+            dem++;
+            if (dem % 10 == 0) savetoDatabase(0.0);
+            else if (dem % 5 == 0) savetoDatabase(2.0);
+            else if (dem % 2 == 0) savetoDatabase(4.0);
+            else savetoDatabase(7.0);
+        }
         private Boolean checkShip(string mmsi, Dictionary<string, ShipJourney> dict)
         {
 
@@ -278,11 +280,11 @@ namespace AISTools
 
         private void saveMMSItoDB(DataRow dr)
         {
-            if (GlobalVar.hashMMSI.Contains(dr["mmsi"].ToString()) == false)
-            {
-                shipmodel.Insert(dr["mmsi"].ToString(), dr["vsnm"].ToString(), Convert.ToInt32(dr["type"].ToString()), dr["class"].ToString());
-                GlobalVar.hashMMSI.Add(dr["mmsi"].ToString());
-            }
+            //if (GlobalVar.hashMMSI.Contains(dr["mmsi"].ToString()) == false)
+            //{
+                shipmodel.Insert(dr);
+                //GlobalVar.hashMMSI.Add(dr["mmsi"].ToString());
+            //}
         }
         //onclose
         protected override void OnClosed(EventArgs e)
@@ -353,7 +355,7 @@ namespace AISTools
 
         private void button1_Click(object sender, EventArgs e)
         {
-            savetoDatabase(true);
+            savetoDatabase(7.0);
         }
         //click save bouy from dict
         /*

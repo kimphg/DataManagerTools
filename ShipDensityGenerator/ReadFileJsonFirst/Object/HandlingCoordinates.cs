@@ -86,7 +86,8 @@ namespace ReadFileJsonFirst.Object
             double dy = (lon2 - lon1);
             if (dx != 0)//chia 2 truong hop de tranh bi chia cho 0
             {
-                for (double x = lat1; x <= lat2; x+=0.001)
+                double xstep = 0.001 * Math.Cos(Math.Atan(dy / dx));
+                for (double x = lat1; x <= lat2; x+=xstep)
                 {
                     double y = lon1 + dy * (x - lat1) / dx;
                     AddPoint(x, y);
@@ -94,7 +95,8 @@ namespace ReadFileJsonFirst.Object
             }
             else if (dy != 0)
             {
-                for (double y = lon1; y <= lon2; y += 0.001)
+                double ystep = 0.001 * Math.Cos(Math.Atan(dx / dy));
+                for (double y = lon1; y <= lon2; y += ystep)
                 {
                     double x = lat1 + dx * (y - lon1) / dy;
                     AddPoint(x, y);

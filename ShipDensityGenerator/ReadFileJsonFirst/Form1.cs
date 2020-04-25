@@ -87,6 +87,7 @@ namespace ReadFileJsonFirst
                 var table = new DataTable();
                 using (var adapter = new SqlDataAdapter($" select [LAT],[LNG],[SOG],[COG],[TIME] from SHIPJOURNEY where SOG > 1 and MMSI like " + mmsi, connectionString))
                 {
+                    
                     adapter.Fill(table);
                 };
                 return table;
@@ -105,7 +106,7 @@ namespace ReadFileJsonFirst
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("QSL Server timeout error");
+                    MessageBox.Show(ex.ToString());
                     return null;
                 }
             }
