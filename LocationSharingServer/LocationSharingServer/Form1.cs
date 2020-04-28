@@ -20,7 +20,7 @@ namespace LocationSharingServer
     public partial class Form1 : Form
     {
         //public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";//
-
+        
         Thread thread1;
         public Form1()
         {
@@ -73,6 +73,7 @@ namespace LocationSharingServer
 
     public class ServerListener
     {
+        private static bool isShiplistOutdated = true;
         private static Timer timer20s;
         static IPEndPoint remoteEP;
         static IPEndPoint localUser;
@@ -82,6 +83,7 @@ namespace LocationSharingServer
         public static Dictionary<IPAddress, LocationClient> clientList = new Dictionary<IPAddress, LocationClient>();
         public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
         private static DataTable shipList = new DataTable();
+        private static int FRAME_HEADER_LEN = 2;
         public static void Run()
         {
             timer20s = new Timer(timer20sTick, new AutoResetEvent(true),0,20000);
@@ -98,9 +100,13 @@ namespace LocationSharingServer
                     {
                         Thread.Sleep(200);
                         if(toStop)break;
-                        byte[] data = udpServer.Receive(ref remoteEP); // listen to packet
-                        udpServer.Send(data, data.Count(), localUser);
-                        if (data.Length == 16)
+                        byte[] frame = udpServer.Receive(ref remoteEP); // listen to packet
+                        udpServer.Send(frame, frame.Count(), localUser);
+                        if (frame.Count() < FRAME_HEADER_LEN) continue;
+                        int framLen = frame.Count() - FRAME_HEADER_LEN;
+                        byte[] data = new byte[framLen];
+                        Array.Copy(frame, 2, data, 0, framLen);
+                        if (frame[0] == 0x00 & frame[1] == 0x00 & frame.Length == 18)//location report
                         {
                             Array.Reverse(data, 0, data.Length);
                             LocationClient newclient = new LocationClient();
@@ -119,7 +125,7 @@ namespace LocationSharingServer
                             AddLocationClient(newclient);
                             sendResToClient(remoteEP,newclient.mLat,newclient.mLon);
                         }
-                        else if (data.Length == 20)
+                        else if (frame[0]==0x0a& frame[1]==0x0a)//device name report
                         {
                             LocationClient newclient = new LocationClient();
                             newclient.mIP = remoteEP.Address;
@@ -127,9 +133,9 @@ namespace LocationSharingServer
                             newclient.mLat = 0;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             
-                            for (int i =0;i<data.Length;i++)
+                            for (int i =0;i<frame.Length;i++)
                             {
-                                if (data[i] == 0) data[i] = (byte)'_';
+                                if (frame[i] == 0) frame[i] = (byte)'_';
                             }
                             newclient.dev = System.Text.Encoding.UTF8.GetString(data);
                             AddLocationClient(newclient);
@@ -142,15 +148,16 @@ namespace LocationSharingServer
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
                             newline += entry.Value.mIP.ToString();
-                            while (newline.Length < 20) newline += "_";
+                            while (newline.Length < 20) newline += " ";
                             newline += entry.Value.dev;
-                            while (newline.Length < 40) newline += "_";
+                            while (newline.Length < 50) newline += " ";
+                            newline += " ";
                             newline += entry.Value.mLat.ToString();
-                            while (newline.Length < 50) newline += "_";
+                            newline += ";";
                             newline += entry.Value.mLon.ToString();
-                            while (newline.Length < 60) newline += "_";
+                            while (newline.Length < 70) newline += " ";
                             newline += entry.Value.msgCount.ToString();
-                            while (newline.Length < 65) newline += "_";
+                            while (newline.Length < 75) newline += " ";
                             newline += timeDate.ToString()+"\n";
                             log += newline;
                         }
@@ -158,7 +165,7 @@ namespace LocationSharingServer
                     }
                     catch (Exception ex)
                     {
-                        log += "server failed:" + ex.ToString();
+                        log += "Exeption:" + ex.ToString();
                     }
                 }
             }
@@ -174,11 +181,15 @@ namespace LocationSharingServer
 
         private static void timer20sTick(object state)
         {
+            isShiplistOutdated = true;
+        }
+        private static void LoadSHipListFromSQL()
+        {
             try
             {
-                string time = ((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds-60000).ToString();
+                string time = ((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds - 60000).ToString();
 
-                using (var adapter = new SqlDataAdapter($" select [LAT],[LON],[SOG],[COG] from SHIP_LIST where [TIME]> " + time +" AND [TYPE] != '-2'", connectionString))
+                using (var adapter = new SqlDataAdapter($" select [LAT],[LON],[SOG],[COG] from SHIP_LIST where [TIME]> " + time + " AND [TYPE] != '-2'", connectionString))
                 {
 
                     adapter.Fill(shipList);
@@ -189,8 +200,8 @@ namespace LocationSharingServer
             {
                 return;
             }
+            isShiplistOutdated = false;
         }
-
         const int frameLen = 10;
         const int MAX_FRAMES_OUTPUT = 500;
         const int maxAgeSec = 600;
@@ -223,6 +234,7 @@ namespace LocationSharingServer
         }
         private static void sendResToClient(IPEndPoint ep, double clat,double clon)
         {
+            if (isShiplistOutdated) LoadSHipListFromSQL();
             byte[] data = new byte [frameLen* MAX_FRAMES_OUTPUT];
             int indexStart = 0;
             foreach(DataRow dr in shipList.Rows)
@@ -233,7 +245,7 @@ namespace LocationSharingServer
                 {
                     float lat = float.Parse(dr["LAT"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
                     float lon = float.Parse(dr["LON"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
-                    if (Math.Abs(clat - lat) > 0.3 || Math.Abs(clon - lon) > 0.3) continue;
+                    if (Math.Abs(clat - lat) > 0.1 || Math.Abs(clon - lon) > 0.1) continue;
                     byte[] blat = BitConverter.GetBytes(lat);
                     byte[] blon = BitConverter.GetBytes(lon);
                     //short ageSec = (short)((((long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds - entry.Value.mLastTimeRec)) / 1000);

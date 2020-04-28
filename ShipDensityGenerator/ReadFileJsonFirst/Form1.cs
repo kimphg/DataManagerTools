@@ -71,7 +71,7 @@ namespace ReadFileJsonFirst
         public List<string> getShipList()
         {
             var table = new DataTable();
-            using (var adapter = new SqlDataAdapter($"SELECT MMSI FROM SHIP", connectionString))
+            using (var adapter = new SqlDataAdapter($"SELECT MMSI FROM SHIP_LIST", connectionString))
             {
                 adapter.Fill(table);
             };
@@ -137,7 +137,7 @@ namespace ReadFileJsonFirst
 
         private void createThread(List<string> ships )
         {
-            int numThread = 16;
+            int numThread = 1;
             // txt_numThread.Text = numThread.ToString();
             //tao ra bang 16 luong
             
@@ -186,16 +186,24 @@ namespace ReadFileJsonFirst
                 double lat2 = (double)row2[0];
                 double lon1 = (double)row1[1];
                 double lon2 = (double)row2[1];
+                double cog1 = (double)row1[3];
+                double cog2 = (double)row2[3];
                 //lat,long,sog,cog,time
                 //double lat1 = (double)row1.ItemArray[0];
 
                 double distance = GeoOperations.DistanceTo(lat1,lon1,lat2,lon2);
-                double turnAngle = Math.Abs((double)row1[3] - (double)row2[3]);
+                double turnAngle = Math.Abs(cog1 - cog2);
                 if (turnAngle > 180) turnAngle -= 180;
 
                 //HandlingCoordinates.checkCoordinate(lat1,lon1);
                 mutex.WaitOne();
-                if (distance < 10 && distance > 0.1 && turnAngle < 20)
+                if (distance < 4 && distance > 0.1 && turnAngle < 15)
+                {
+
+                    HandlingCoordinates.AddLine(lat1, lon1, lat2, lon2);
+
+                }
+                else if (distance < 2 && distance > 0.1 && turnAngle < 30)
                 {
 
                     HandlingCoordinates.AddLine(lat1, lon1, lat2, lon2);
@@ -240,8 +248,8 @@ namespace ReadFileJsonFirst
                 progress.Value = countShips;
                 double timeSec = DateTime.UtcNow.Subtract(timeStart).TotalSeconds + 1;
                 label3.Text = countShips.ToString() + "/" + progress.Maximum.ToString() + 
-                    " time:" + (timeSec.ToString("0.##")) + 
-                    " Files per sec:" + (countShips / timeSec).ToString("0.##");
+                    " Time:" + (timeSec.ToString("0.##")) + 
+                    " Ships per sec:" + (countShips / timeSec).ToString("0.##");
             }
         }
         private void stop()
@@ -262,8 +270,34 @@ namespace ReadFileJsonFirst
             {
                 timer1.Stop();
                 stop();
+                List<int> removeLat = new List<int>();
                 
-                MessageBox.Show("Xong");
+                foreach (var plat in HandlingCoordinates.densityMap)
+                {
+                    List<int> removeLon = new List<int>();
+                    foreach (var plon in plat.Value)
+                    {
+                        if (plon.Value < 2)
+                        {
+                            //HandlingCoordinates.densityMap[plat.Key].Remove(plon.Key);
+                            
+                            removeLon.Add(plon.Key);
+                        }
+
+                    }
+                    for (int i = 0; i < removeLon.Count(); i++)
+                    {
+                        HandlingCoordinates.densityMap[plat.Key].Remove(removeLon[i]);
+                    }
+                    if(HandlingCoordinates.densityMap[plat.Key].Count()==0) removeLat.Add(plat.Key);
+
+                }
+                for (int i = 0; i < removeLat.Count(); i++)
+                {
+                    HandlingCoordinates.densityMap.Remove(removeLat[i]);
+                }
+                
+                    MessageBox.Show("Xong");
                
 
             }

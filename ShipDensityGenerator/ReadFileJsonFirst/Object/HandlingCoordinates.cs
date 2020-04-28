@@ -71,7 +71,7 @@ namespace ReadFileJsonFirst.Object
 
         internal static void AddLine(double lat1, double lon1, double lat2, double lon2)
         {
-            if (lat1 > lat2)
+            /*if (lat1 > lat2)
             {
                 //swap two point to make sure lat1<=lat2
                 double temp = lat1;
@@ -80,8 +80,8 @@ namespace ReadFileJsonFirst.Object
                 temp = lon1;
                 lon1 = lon2;
                 lon2 = temp;
-
-            }
+                
+            }*/
             double dx = (lat2 - lat1);
             double dy = (lon2 - lon1);
             if (dx != 0)//chia 2 truong hop de tranh bi chia cho 0
