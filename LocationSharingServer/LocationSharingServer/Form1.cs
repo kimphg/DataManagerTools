@@ -65,8 +65,9 @@ namespace LocationSharingServer
     {
         public IPAddress mIP;
         public string dev;
+        public int ID;
         public float mLat, mLon;
-        public long mLastTimeSent;
+        //public long mLastTimeSent;
         public long mLastTimeRec;
         public int msgCount;
     }
@@ -80,7 +81,7 @@ namespace LocationSharingServer
         static UdpClient udpServer;
         public static string log = "";
         internal static bool toStop = false;
-        public static Dictionary<IPAddress, LocationClient> clientList = new Dictionary<IPAddress, LocationClient>();
+        public static Dictionary<int, LocationClient> clientList = new Dictionary<int, LocationClient>();
         public static string connectionString = @"Data Source=WIN-CS49MK82IQN\SQLEXPRESS;Initial Catalog=seamap;Integrated Security=True";
         private static DataTable shipList = new DataTable();
         private static int FRAME_HEADER_LEN = 2;
@@ -114,50 +115,78 @@ namespace LocationSharingServer
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             newclient.mLon = System.BitConverter.ToSingle(data, 4);
                             newclient.mLat = System.BitConverter.ToSingle(data, 0);
-                            newclient.mLastTimeSent = System.BitConverter.ToInt64(data, 8);
-                            if (clientList.ContainsKey(newclient.mIP))
+                            newclient.ID = System.BitConverter.ToInt32(data, 8);
+                            if (clientList.ContainsKey(newclient.ID))
                             {
-                                newclient.msgCount = clientList[newclient.mIP].msgCount + 1;
-                                newclient.dev = clientList[newclient.mIP].dev;
+                                newclient.msgCount = clientList[newclient.ID].msgCount + 1;
+                                newclient.dev = clientList[newclient.ID].dev;
                             }
                             else
                                 newclient.msgCount = 1;
                             AddLocationClient(newclient);
                             sendResToClient(remoteEP,newclient.mLat,newclient.mLon);
                         }
-                        else if (frame[0]==0x0a& frame[1]==0x0a)//device name report
+                        else if (frame[0]==0x5a& frame[1]==0xa5)//device name report
                         {
                             LocationClient newclient = new LocationClient();
                             newclient.mIP = remoteEP.Address;
                             newclient.mLon = 0;
                             newclient.mLat = 0;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
-                            
-                            for (int i =0;i<frame.Length;i++)
-                            {
-                                if (frame[i] == 0) frame[i] = (byte)'_';
-                            }
                             newclient.dev = System.Text.Encoding.UTF8.GetString(data);
-                            AddLocationClient(newclient);
+                            using (var adapter = new SqlDataAdapter($" select max(ID) from DEV_LIST", connectionString))
+                            {
+                                DataTable maxID = new DataTable();
+                                adapter.Fill(maxID);
+                                newclient.ID = 1+int.Parse(maxID.Rows[0]["Column1"].ToString());
+                            };
+                            //add to device list
+                            var table = new DataTable();
+                            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[DEV_LIST]", connectionString))
+                            {
+                                adapter.Fill(table);
+                            };
+                            var row = table.NewRow();
+                            row["LAT"] = newclient.mLat;
+                            row["DEV_NAME"] = newclient.dev;
+                            row["LON"] = newclient.mLon;
+                            row["ID"] = newclient.ID;
+                            table.Rows.Add(row);
+
+                            using (var bulk = new SqlBulkCopy(connectionString))
+                            {
+                                bulk.DestinationTableName = "DEV_LIST";
+                                bulk.WriteToServer(table);
+                            }
+                            table.Clear();
+                            Byte[] dataOut = new Byte[6];
+                            dataOut[0] = 0x5a;
+                            dataOut[1] = 0xa5;
+                            dataOut[2] = (byte)(newclient.ID >> 3);
+                            dataOut[3] = (byte)(newclient.ID >> 2);
+                            dataOut[4] = (byte)(newclient.ID >> 1);
+                            dataOut[5] = (byte)(newclient.ID);
+                            udpServer.Send(dataOut,6, remoteEP); // reply back
+                            //AddLocationClient(newclient);
                             //sendResToClient(remoteEP);
                         }
                         log = "";
                         foreach (var entry in clientList)
                         {
-                            TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeSent+ 25200000);
+                            TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeRec);
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
                             newline += entry.Value.mIP.ToString();
-                            while (newline.Length < 20) newline += " ";
+                            newline += " \t";
                             newline += entry.Value.dev;
-                            while (newline.Length < 50) newline += " ";
-                            newline += " ";
+                            newline += " \t";
+                            //newline += " ";
                             newline += entry.Value.mLat.ToString();
-                            newline += ";";
+                            newline += "; ";
                             newline += entry.Value.mLon.ToString();
-                            while (newline.Length < 70) newline += " ";
+                            newline += " \t";
                             newline += entry.Value.msgCount.ToString();
-                            while (newline.Length < 75) newline += " ";
+                            newline += " \t";
                             newline += timeDate.ToString()+"\n";
                             log += newline;
                         }
@@ -209,25 +238,38 @@ namespace LocationSharingServer
 
         public static void AddLocationClient(LocationClient newclient)
         {
-            
-            clientList[newclient.mIP] = newclient;
-            if (newclient.mIP.Equals(IPAddress.Parse("27.72.56.161"))) return;
+            //find  in device list
+            using (var adapter = new SqlDataAdapter($" select [ID],[DEV_NAME] from DEV_LIST where [ID] = "+ newclient.ID.ToString(), connectionString))
+            {
+                DataTable tab = new DataTable();
+                adapter.Fill(tab);
+                if ((tab.Rows.Count) > 0)
+                {
+                    newclient.dev = tab.Rows[0]["DEV_NAME"].ToString();//ID = 1 + int.Parse(maxID.Rows[0]["Column1"].ToString());
+                }
+            };
+
+
+
+            clientList[newclient.ID] = newclient;
+
+
+            if (newclient.mIP.Equals(IPAddress.Parse("27.72.56.161"))) return;//test data, dont save
             var table = new DataTable();
-            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[LOCATION_RECORD]", connectionString))
+            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[DEV_JOURNEY]", connectionString))
             {
                 adapter.Fill(table);
             };
             var row = table.NewRow();
+            row["ID"] = newclient.ID.ToString();
             row["IP"] = newclient.mIP.ToString();
             row["LAT"] = newclient.mLat;
-            row["DEV"] = newclient.dev;
-            row["LNG"] = newclient.mLon;
-            row["TIME"] = DateTime.Now.ToString("MM/dd/yyyy h:mm tt");
+            row["LON"] = newclient.mLon;
+            row["TIME"] = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
             table.Rows.Add(row);
-
             using (var bulk = new SqlBulkCopy(connectionString))
             {
-                bulk.DestinationTableName = "LOCATION_RECORD";
+                bulk.DestinationTableName = "DEV_JOURNEY";
                 bulk.WriteToServer(table);
             }
             table.Clear();
