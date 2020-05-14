@@ -25,11 +25,15 @@ namespace AISTools.Model
         {
             int count = 0;
             var table = new DataTable();
-            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM ShipJourney", ConnectionString.connectionString))
+            try
             {
-                adapter.Fill(table);
-            };
-
+                using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM ShipJourney", ConnectionString.connectionString))
+                {
+                    adapter.Fill(table);
+                };
+            }
+            catch (Exception e)
+            { return 0; }
             foreach (var item in dict.Values.ToList())
             {
                 foreach (var coor in item.ListCoor)

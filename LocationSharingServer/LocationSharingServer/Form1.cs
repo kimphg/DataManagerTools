@@ -93,7 +93,7 @@ namespace LocationSharingServer
             {
                 udpServer = new UdpClient(50000);
                 remoteEP = new IPEndPoint(IPAddress.Any, 0);
-                localUser = new IPEndPoint(IPAddress.Parse("192.168.0.66"), 21400);
+                localUser = new IPEndPoint(IPAddress.Parse("192.168.0.70"), 50000);
                 log += "server start ok";
                 while (true)
                 {
@@ -137,14 +137,14 @@ namespace LocationSharingServer
                             }
                             else newclient.dev = System.Text.Encoding.UTF8.GetString(data);
                             newclient.mIP = remoteEP.Address;
-                            newclient.mLon = 0;
-                            newclient.mLat = 0;
+                            newclient.mLon = -1000;
+                            newclient.mLat = -1000;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             foreach (var entry in clientList)//check if device at that ip already exist
                             {
                                 if (entry.Value.dev == newclient.dev && entry.Value.mIP == newclient.mIP)
                                 {
-                                    return;
+                                    continue;
                                 }
                             }
                             using (var adapter = new SqlDataAdapter($" select max(ID) from DEV_LIST", connectionString))
@@ -154,20 +154,24 @@ namespace LocationSharingServer
                                 newclient.ID = 1+int.Parse(maxID.Rows[0]["Column1"].ToString());
                             };
                             //check device same ID
+                            bool devExist = false;
                             foreach (var entry in clientList)//check if device at that ip already exist
                             {
                                 if (entry.Value.dev == newclient.dev && entry.Value.mIP == newclient.mIP)
                                 {
-                                    return;
+                                    devExist = true;
+                                    break;
                                 }
                                 if (entry.Value.ID == newclient.ID)
                                 {
                                     newclient.mLat = entry.Value.mLat;
                                     newclient.mLon = entry.Value.mLon;
                                     clientList[newclient.ID] = newclient;
-                                    return;
+                                    devExist = true;
+                                    break;
                                 }
                             }
+                            if (devExist) continue;
                             clientList.Add(newclient.ID, newclient);
                             Byte[] dataOut = new Byte[6];
                             dataOut[0] = 0x5a;
@@ -193,8 +197,7 @@ namespace LocationSharingServer
                             newline += entry.Value.mIP.ToString();
                             newline += " \t";
                             
-                            newline += entry.Value.dev;
-                            newline += " \t";
+                            
                             //newline += " ";
                             newline += entry.Value.mLat.ToString("0.0000");
                             newline += "; ";
@@ -202,7 +205,9 @@ namespace LocationSharingServer
                             newline += " \t";
                             newline += entry.Value.msgCount.ToString();
                             newline += " \t";
-                            newline += timeDate.ToString()+"\n";
+                            newline += timeDate.ToString()+"\t";
+                            newline += entry.Value.dev;
+                            newline += " \n";
                             log += newline;
                         }
                         
@@ -218,9 +223,9 @@ namespace LocationSharingServer
                 log += "server start failed:" + ex.ToString();
             }
 
-            
 
 
+            log = "server stopped";
         }
         private static void addNewDevToServer(LocationClient newclient)
         {
@@ -304,15 +309,14 @@ namespace LocationSharingServer
             {
                 DataTable tab = new DataTable();
                 adapter.Fill(tab);
-                if ((tab.Rows.Count) > 0)// device with that ID was found in the database
+
+                if ((tab.Rows.Count) > 0 && newclient.mLon > -1000 && newclient.mLat > -1000)// device with that ID was found in the database
                 {
                     newclient.dev = tab.Rows[0]["DEV_NAME"].ToString();//add device name from database
-                    if (newclient.mLon != 0 && newclient.mLat != 0)
-                    {
-                        addNewRecToServer(newclient);
-                    }
+                    addNewRecToServer(newclient);
+                    
                 }
-                else if((newclient.dev!=null)&& (newclient.mLat!=0)&&(newclient.mLon!=0))// ID not found, data enough to create a new device
+                else if((newclient.dev!=null))// ID not found, create a new device
                 {
                     addNewDevToServer(newclient);
                     
