@@ -87,8 +87,8 @@ namespace LocationSharingServer
         private static int FRAME_HEADER_LEN = 2;
         public static void Run()
         {
-            timer20s = new Timer(timer20sTick, new AutoResetEvent(true),0,20000);
-            
+            timer20s = new Timer(timer20sTick, new AutoResetEvent(true), 0, 20000);
+
             try
             {
                 udpServer = new UdpClient(50000);
@@ -100,7 +100,7 @@ namespace LocationSharingServer
                     try
                     {
                         Thread.Sleep(100);
-                        if(toStop)break;
+                        if (toStop) break;
                         byte[] frame = udpServer.Receive(ref remoteEP); // listen to packet
                         udpServer.Send(frame, frame.Count(), localUser);
                         if (frame.Count() < FRAME_HEADER_LEN) continue;
@@ -112,24 +112,30 @@ namespace LocationSharingServer
                             Array.Reverse(data, 0, data.Length);
                             LocationClient newclient = new LocationClient();
                             newclient.mIP = remoteEP.Address;
+                            int nameId = BitConverter.ToInt32(remoteEP.Address.GetAddressBytes(), 0);
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             newclient.mLon = System.BitConverter.ToSingle(data, 4);
                             newclient.mLat = System.BitConverter.ToSingle(data, 0);
                             newclient.ID = System.BitConverter.ToInt32(data, 8);
+                            newclient.msgCount = 1;
+                            newclient.dev = "";
                             if (clientList.ContainsKey(newclient.ID))
                             {
                                 newclient.msgCount = clientList[newclient.ID].msgCount + 1;
                                 newclient.dev = clientList[newclient.ID].dev;
                             }
-                            else
-                                newclient.msgCount = 1;
+                            if(newclient.dev.Length<1)
+                            {
+                                requestDevName(remoteEP, newclient.ID);
+                            }
+                            
                             AddLocationClient(newclient);
-                            sendResToClient(remoteEP,newclient.mLat,newclient.mLon);
+                            sendResToClient(remoteEP, newclient.mLat, newclient.mLon);
                         }
-                        else if (frame[0]==0x5a& frame[1]==0xa5)//device name report
+                        else if (frame[0] == 0x5a & frame[1] == 0xa5)//device name report
                         {
                             LocationClient newclient = new LocationClient();
-                            if(data.Count()>30)
+                            if (data.Count() > 30)
                             {
                                 byte[] name = new byte[30];
                                 Array.Copy(data, name, 30);
@@ -137,43 +143,29 @@ namespace LocationSharingServer
                             }
                             else newclient.dev = System.Text.Encoding.UTF8.GetString(data);
                             newclient.mIP = remoteEP.Address;
-                            newclient.mLon = -1000;
-                            newclient.mLat = -1000;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
-                            foreach (var entry in clientList)//check if device at that ip already exist
-                            {
-                                if (entry.Value.dev == newclient.dev && entry.Value.mIP == newclient.mIP)
-                                {
-                                    continue;
-                                }
-                            }
-                            using (var adapter = new SqlDataAdapter($" select max(ID) from DEV_LIST", connectionString))
-                            {
-                                DataTable maxID = new DataTable();
-                                adapter.Fill(maxID);
-                                newclient.ID = 1+int.Parse(maxID.Rows[0]["Column1"].ToString());
-                            };
                             //check device same ID
-                            bool devExist = false;
+                            int devExist = 0;
                             foreach (var entry in clientList)//check if device at that ip already exist
                             {
-                                if (entry.Value.dev == newclient.dev && entry.Value.mIP == newclient.mIP)
+                                if (entry.Value.mIP == newclient.mIP)
                                 {
-                                    devExist = true;
-                                    break;
-                                }
-                                if (entry.Value.ID == newclient.ID)
-                                {
+                                    devExist = entry.Key;
                                     newclient.mLat = entry.Value.mLat;
                                     newclient.mLon = entry.Value.mLon;
-                                    clientList[newclient.ID] = newclient;
-                                    devExist = true;
+                                    newclient.ID = entry.Key;
                                     break;
                                 }
+
                             }
-                            if (devExist) continue;
-                            clientList.Add(newclient.ID, newclient);
-                            Byte[] dataOut = new Byte[6];
+                            if (devExist != 0)
+                            {
+                                clientList.Remove(devExist);
+                                clientList.Add(devExist, newclient);
+                            }
+                            //if (!clientList.ContainsKey(newclient.ID))
+                              //  clientList.Add(newclient.ID, newclient);
+                            /*Byte[] dataOut = new Byte[6];
                             dataOut[0] = 0x5a;
                             dataOut[1] = 0xa5;
                             dataOut[2] = (byte)(newclient.ID >> 24);
@@ -184,7 +176,7 @@ namespace LocationSharingServer
                             udpServer.Send(dataOut, 6, remoteEP); // reply back
                             udpServer.Send(dataOut, 6, remoteEP); // reply back
                             //AddLocationClient(newclient);
-                            //sendResToClient(remoteEP);
+                            //sendResToClient(remoteEP);*/
                         }
                         log = "";
                         foreach (var entry in clientList)
@@ -196,8 +188,8 @@ namespace LocationSharingServer
                             newline += " \t";
                             newline += entry.Value.mIP.ToString();
                             newline += " \t";
-                            
-                            
+
+
                             //newline += " ";
                             newline += entry.Value.mLat.ToString("0.0000");
                             newline += "; ";
@@ -205,12 +197,12 @@ namespace LocationSharingServer
                             newline += " \t";
                             newline += entry.Value.msgCount.ToString();
                             newline += " \t";
-                            newline += timeDate.ToString()+"\t";
+                            newline += timeDate.ToString() + "\t";
                             newline += entry.Value.dev;
                             newline += " \n";
                             log += newline;
                         }
-                        
+
                     }
                     catch (Exception ex)
                     {
@@ -226,6 +218,17 @@ namespace LocationSharingServer
 
 
             log = "server stopped";
+        }
+        private static void requestDevName(IPEndPoint remoteEP,int ID)
+        {
+            Byte[] dataOut = new Byte[6];
+            dataOut[0] = 0x5a;
+            dataOut[1] = 0xa5;
+            dataOut[2] = (byte) (ID >> 24);
+            dataOut[3] = (byte) (ID >> 16);
+            dataOut[4] = (byte) (ID >> 8);
+            dataOut[5] = (byte) (ID);
+            udpServer.Send(dataOut, 6, remoteEP); // send request
         }
         private static void addNewDevToServer(LocationClient newclient)
         {
@@ -300,8 +303,10 @@ namespace LocationSharingServer
         const int frameLen = 10;
         const int MAX_FRAMES_OUTPUT = 500;
         const int maxAgeSec = 600;
-        
 
+        private void getDevNameFromDatabase(int ID)
+        {
+        }
         public static void AddLocationClient(LocationClient newclient)
         {
             //find  in databases device list
@@ -319,12 +324,10 @@ namespace LocationSharingServer
                 else if((newclient.dev!=null))// ID not found, create a new device
                 {
                     addNewDevToServer(newclient);
-                    
                 }
             };
-            
             clientList[newclient.ID] = newclient;
-            /*if (newclient.mIP.Equals(IPAddress.Parse("27.72.56.161"))) return;//test data, dont save
+            if (newclient.mIP.Equals(IPAddress.Parse("27.72.56.161"))) return;//test data, dont save
             var table = new DataTable();
             using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[DEV_HISTORY]", connectionString))
             {
@@ -342,7 +345,7 @@ namespace LocationSharingServer
                 bulk.DestinationTableName = "DEV_HISTORY";
                 bulk.WriteToServer(table);
             }
-            table.Clear();*/
+            table.Clear();
         }
         private static void sendResToClient(IPEndPoint ep, double clat,double clon)
         {
@@ -357,6 +360,8 @@ namespace LocationSharingServer
                 {
                     float lat = float.Parse(dr["LAT"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
                     float lon = float.Parse(dr["LON"].ToString());//BitConverter.GetBytes(entry.Value.mLat);
+                    float cog = float.Parse(dr["COG"].ToString());
+                    if (cog == 0) continue;
                     if (Math.Abs(clat - lat) > 0.1 || Math.Abs(clon - lon) > 0.1) continue;
                     byte[] blat = BitConverter.GetBytes(lat);
                     byte[] blon = BitConverter.GetBytes(lon);
