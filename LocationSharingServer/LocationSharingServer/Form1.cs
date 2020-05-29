@@ -63,7 +63,7 @@ namespace LocationSharingServer
     }
     public struct LocationClient
     {
-        public IPAddress mIP;
+        public IPEndPoint mIP;
         public string dev;
         public int ID;
         public float mLat, mLon;
@@ -111,8 +111,7 @@ namespace LocationSharingServer
                         {
                             Array.Reverse(data, 0, data.Length);
                             LocationClient newclient = new LocationClient();
-                            newclient.mIP = remoteEP.Address;
-                            int nameId = BitConverter.ToInt32(remoteEP.Address.GetAddressBytes(), 0);
+                            newclient.mIP = remoteEP;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             newclient.mLon = System.BitConverter.ToSingle(data, 4);
                             newclient.mLat = System.BitConverter.ToSingle(data, 0);
@@ -124,7 +123,13 @@ namespace LocationSharingServer
                                 newclient.msgCount = clientList[newclient.ID].msgCount + 1;
                                 newclient.dev = clientList[newclient.ID].dev;
                             }
-                            if(newclient.dev.Length<1)
+                            while (newclient.dev.Length > 0)
+                            {
+                                if (newclient.dev.ElementAt(0) == ' ')
+                                    newclient.dev = newclient.dev.Remove(0,1);
+                                else break;
+                            }
+                            if (newclient.dev.Length < 1)
                             {
                                 requestDevName(remoteEP, newclient.ID);
                             }
@@ -142,14 +147,15 @@ namespace LocationSharingServer
                                 newclient.dev = System.Text.Encoding.UTF8.GetString(name);
                             }
                             else newclient.dev = System.Text.Encoding.UTF8.GetString(data);
-                            newclient.mIP = remoteEP.Address;
+                            newclient.mIP = remoteEP;
                             newclient.mLastTimeRec = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                             //check device same ID
                             int devExist = 0;
                             foreach (var entry in clientList)//check if device at that ip already exist
                             {
-                                if (entry.Value.mIP == newclient.mIP)
+                                if (entry.Value.mIP.Equals(newclient.mIP))
                                 {
+
                                     devExist = entry.Key;
                                     newclient.mLat = entry.Value.mLat;
                                     newclient.mLon = entry.Value.mLon;
@@ -184,20 +190,19 @@ namespace LocationSharingServer
                             TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeRec);
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
-                            newline += entry.Value.ID.ToString();
-                            newline += " \t";
                             newline += entry.Value.mIP.ToString();
                             newline += " \t";
-
-
                             //newline += " ";
                             newline += entry.Value.mLat.ToString("0.0000");
-                            newline += "; ";
+                            newline += " ";
                             newline += entry.Value.mLon.ToString("0.0000");
                             newline += " \t";
                             newline += entry.Value.msgCount.ToString();
                             newline += " \t";
+                            
                             newline += timeDate.ToString() + "\t";
+                            newline += entry.Value.ID.ToString();
+                            newline += " \t";
                             newline += entry.Value.dev;
                             newline += " \n";
                             log += newline;
@@ -230,28 +235,46 @@ namespace LocationSharingServer
             dataOut[5] = (byte) (ID);
             udpServer.Send(dataOut, 6, remoteEP); // send request
         }
-        private static void addNewDevToServer(LocationClient newclient)
+        private static void addDevToServer(LocationClient newclient)
         {
-            //add to device list
-            var table = new DataTable();
-            using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM [SEAMAP].[dbo].[DEV_LIST]", connectionString))
+            try
             {
-                adapter.Fill(table);
-            };
-            var row = table.NewRow();
-            row["LAT"] = newclient.mLat;
-            row["DEV_NAME"] = newclient.dev;
-            row["LON"] = newclient.mLon;
-            row["ID"] = newclient.ID;
-            table.Rows.Add(row);
+                //update value 
+                string query = "UPDATE DEV_LIST ";
+                query += " SET LAT = @lat, LON = @lon, DEV_NAME = @dev ";
+                query += "where [ID] LIKE " + newclient.ID.ToString() + "";
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
 
-            using (var bulk = new SqlBulkCopy(connectionString))
+                        command.Parameters.AddWithValue("@lat", newclient.mLat);
+                        command.Parameters.AddWithValue("@lon", newclient.mLon);
+                        command.Parameters.AddWithValue("@dev", newclient.dev );
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                bulk.DestinationTableName = "DEV_LIST";
-                bulk.WriteToServer(table);
+                //insert if doesnt exist
+                string query = "INSERT INTO DEV_LIST (LAT,LON,DEV_NAME,ID)";
+                query += " VALUES (@lat,@lon,@dev)";
+
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@lat", newclient.mLat);
+                        command.Parameters.AddWithValue("@lon", newclient.mLon);
+                        command.Parameters.AddWithValue("@dev", newclient.dev);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
             }
             
-            table.Clear();
         }
         private static void addNewRecToServer(LocationClient newclient)
         {
@@ -309,6 +332,7 @@ namespace LocationSharingServer
         }
         public static void AddLocationClient(LocationClient newclient)
         {
+            
             //find  in databases device list
             using (var adapter = new SqlDataAdapter($" select [ID],[DEV_NAME] from DEV_LIST where [ID] = "+ newclient.ID.ToString(), connectionString))
             {
@@ -317,13 +341,13 @@ namespace LocationSharingServer
 
                 if ((tab.Rows.Count) > 0 && newclient.mLon > -1000 && newclient.mLat > -1000)// device with that ID was found in the database
                 {
-                    newclient.dev = tab.Rows[0]["DEV_NAME"].ToString();//add device name from database
-                    addNewRecToServer(newclient);
+                    if (newclient.dev.Length == 0) newclient.dev = tab.Rows[0]["DEV_NAME"].ToString();//add device name from database
+                    addDevToServer(newclient);
                     
                 }
                 else if((newclient.dev!=null))// ID not found, create a new device
                 {
-                    addNewDevToServer(newclient);
+                    addDevToServer(newclient);
                 }
             };
             clientList[newclient.ID] = newclient;
@@ -340,10 +364,17 @@ namespace LocationSharingServer
             row["LON"] = newclient.mLon;
             row["TIME"] = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
             table.Rows.Add(row);
-            using (var bulk = new SqlBulkCopy(connectionString))
+            try
             {
-                bulk.DestinationTableName = "DEV_HISTORY";
-                bulk.WriteToServer(table);
+                using (var bulk = new SqlBulkCopy(connectionString))
+                {
+                    bulk.DestinationTableName = "DEV_HISTORY";
+                    bulk.WriteToServer(table);
+                }
+            }
+            catch (Exception e)
+            {
+                return;
             }
             table.Clear();
         }
