@@ -191,17 +191,18 @@ namespace LocationSharingServer
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
                             newline += entry.Value.mIP.ToString();
+                            while (newline.Length < 20) newline += " ";
                             newline += " \t";
                             //newline += " ";
                             newline += entry.Value.mLat.ToString("0.0000");
                             newline += " ";
                             newline += entry.Value.mLon.ToString("0.0000");
                             newline += " \t";
-                            newline += entry.Value.msgCount.ToString();
+                            newline += entry.Value.msgCount.ToString("0000");
                             newline += " \t";
                             
                             newline += timeDate.ToString() + "\t";
-                            newline += entry.Value.ID.ToString();
+                            newline += entry.Value.ID.ToString("00000000000");
                             newline += " \t";
                             newline += entry.Value.dev;
                             newline += " \n";
@@ -239,6 +240,26 @@ namespace LocationSharingServer
         {
             try
             {
+                //insert if doesnt exist
+                string query = "INSERT INTO DEV_LIST (LAT,LON,DEV_NAME,ID)";
+                query += " VALUES (@lat,@lon,@dev,@id)";
+
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@lat", newclient.mLat);
+                        command.Parameters.AddWithValue("@lon", newclient.mLon);
+                        command.Parameters.AddWithValue("@dev", newclient.dev);
+                        command.Parameters.AddWithValue("@id", newclient.ID);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                
+            }
+            catch (Exception ex)
+            {
                 //update value 
                 string query = "UPDATE DEV_LIST ";
                 query += " SET LAT = @lat, LON = @lon, DEV_NAME = @dev ";
@@ -248,24 +269,6 @@ namespace LocationSharingServer
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
 
-                        command.Parameters.AddWithValue("@lat", newclient.mLat);
-                        command.Parameters.AddWithValue("@lon", newclient.mLon);
-                        command.Parameters.AddWithValue("@dev", newclient.dev );
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //insert if doesnt exist
-                string query = "INSERT INTO DEV_LIST (LAT,LON,DEV_NAME,ID)";
-                query += " VALUES (@lat,@lon,@dev)";
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
                         command.Parameters.AddWithValue("@lat", newclient.mLat);
                         command.Parameters.AddWithValue("@lon", newclient.mLon);
                         command.Parameters.AddWithValue("@dev", newclient.dev);
