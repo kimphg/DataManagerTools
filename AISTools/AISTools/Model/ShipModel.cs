@@ -18,26 +18,6 @@ namespace AISTools.Model
 
             try
             {
-                string query = "UPDATE SHIP_LIST ";
-                query += " SET LAT = @lat, LON = @lon, SOG = @sog, COG = @cog, TIME = @time ";
-                query += "where [MMSI] LIKE '" + dr["MMSI"] + "' AND [VSNM] LIKE '" + dr["VSNM"] + "'";
-                using (SqlConnection connection = new SqlConnection(ConnectionString.connectionString))
-                {
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-
-                        command.Parameters.AddWithValue("@lat", dr["LAT"]);
-                        command.Parameters.AddWithValue("@lon", dr["LNG"]);
-                        command.Parameters.AddWithValue("@sog", dr["SOG"]);
-                        command.Parameters.AddWithValue("@cog", dr["COG"]);//(long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
-                        command.Parameters.AddWithValue("@time", (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
                 //insert if doesnt exist
                 string query = "INSERT INTO SHIP_LIST (MMSI,VSNM,TYPE,CLASS,LAT,LON,SOG,COG,TIME)";
                 query += " VALUES (@mmsi,@vsnm,@type,@class,@lat,@lon,@sog,@cog,@time)";
@@ -50,6 +30,27 @@ namespace AISTools.Model
                         command.Parameters.AddWithValue("@vsnm", dr["VSNM"]);
                         command.Parameters.AddWithValue("@type", dr["TYPE"]);
                         command.Parameters.AddWithValue("@class", dr["CLASS"]);
+                        command.Parameters.AddWithValue("@lat", dr["LAT"]);
+                        command.Parameters.AddWithValue("@lon", dr["LNG"]);
+                        command.Parameters.AddWithValue("@sog", dr["SOG"]);
+                        command.Parameters.AddWithValue("@cog", dr["COG"]);//(long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                        command.Parameters.AddWithValue("@time", (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                string query = "UPDATE SHIP_LIST ";
+                query += " SET LAT = @lat, LON = @lon, SOG = @sog, COG = @cog, TIME = @time ";
+                query += "where [MMSI] LIKE '" + dr["MMSI"] + "' AND [VSNM] LIKE '" + dr["VSNM"] + "'";
+                using (SqlConnection connection = new SqlConnection(ConnectionString.connectionString))
+                {
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+
                         command.Parameters.AddWithValue("@lat", dr["LAT"]);
                         command.Parameters.AddWithValue("@lon", dr["LNG"]);
                         command.Parameters.AddWithValue("@sog", dr["SOG"]);
