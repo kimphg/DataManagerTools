@@ -54,9 +54,14 @@ namespace ReadFileJsonFirst.Object
        
         public static void writeFile(string path, string data)
         {
+            char[] dataLines = data.ToArray();
             using (var tw = new StreamWriter(path))
             {
-                tw.WriteLine(data);
+                foreach (var line in dataLines)
+                {
+                    tw.Write(line);
+                    tw.Flush();
+                }
                 tw.Close();
             }
         }
