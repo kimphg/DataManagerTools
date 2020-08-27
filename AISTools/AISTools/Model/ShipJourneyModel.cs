@@ -27,7 +27,7 @@ namespace AISTools.Model
             var table = new DataTable();
             try
             {
-                using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM ShipJourney", ConnectionString.connectionString))
+                using (var adapter = new SqlDataAdapter($"SELECT TOP 0 * FROM SHIP_LOG", ConnectionString.connectionString))
                 {
                     adapter.Fill(table);
                 };
@@ -58,7 +58,7 @@ namespace AISTools.Model
                 using (var bulk = new SqlBulkCopy(ConnectionString.connectionString))
                 {
                     bulk.BulkCopyTimeout = 120;
-                    bulk.DestinationTableName = "SHIPJOURNEY";
+                    bulk.DestinationTableName = "SHIP_LOG";
                     bulk.WriteToServer(table);
                 }
             }
@@ -69,7 +69,7 @@ namespace AISTools.Model
                     using (var bulk = new SqlBulkCopy(ConnectionString.connectionString))
                     {
                         bulk.BulkCopyTimeout = 240;
-                        bulk.DestinationTableName = "SHIPJOURNEY";
+                        bulk.DestinationTableName = "SHIP_LOG";
                         bulk.WriteToServer(table);
                     }
                 }
