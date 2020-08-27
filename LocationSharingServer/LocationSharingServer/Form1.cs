@@ -185,8 +185,14 @@ namespace LocationSharingServer
                             //sendResToClient(remoteEP);*/
                         }
                         log = "";
+                        int sumMsg = 0;
+                        int sumDev = 0;
+                        long timeNow = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
                         foreach (var entry in clientList)
                         {
+                            long timeDiff = timeNow - entry.Value.mLastTimeRec;
+                            if (timeDiff > 1000 * 3600 * 24)
+                                continue;
                             TimeSpan time = TimeSpan.FromMilliseconds(entry.Value.mLastTimeRec);
                             DateTime timeDate = new DateTime(1970, 1, 1) + time;
                             string newline = "";
@@ -207,7 +213,10 @@ namespace LocationSharingServer
                             newline += entry.Value.dev;
                             newline += " \n";
                             log += newline;
+                            sumMsg += entry.Value.msgCount;
+                            sumDev++;
                         }
+                        log = "Sum msg: "+sumMsg.ToString()+ " \tSum devices: " + sumDev.ToString()+ "\n" + log;
 
                     }
                     catch (Exception ex)

@@ -34,7 +34,8 @@ namespace AISTools.Model
                         command.Parameters.AddWithValue("@lon", dr["LNG"]);
                         command.Parameters.AddWithValue("@sog", dr["SOG"]);
                         command.Parameters.AddWithValue("@cog", dr["COG"]);//(long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
-                        command.Parameters.AddWithValue("@time", (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds);
+                        long time = (long)DateTime.Now.Subtract(DateTime.MinValue.AddYears(1969)).TotalMilliseconds;
+                        command.Parameters.AddWithValue("@time",time );
                         connection.Open();
                         command.ExecuteNonQuery();
                     }

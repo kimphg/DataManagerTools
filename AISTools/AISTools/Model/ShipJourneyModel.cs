@@ -34,12 +34,14 @@ namespace AISTools.Model
             }
             catch (Exception e)
             { return 0; }
-            foreach (var item in dict.Values.ToList())
+            Object.ShipJourney[] list = new Object.ShipJourney [dict.Values.ToList().Count()];
+            dict.Values.ToList().CopyTo(list);
+            foreach (var item in list)
             {
                 foreach (var coor in item.ListCoor)
                 {
                    
-                    var row = table.NewRow();
+                    var row = table.NewRow();//todo: memory leak
                     row["MMSI"] = item.Mmsi;
                     row["LAT"] = coor.lat;
                     row["LNG"] = coor.lng;
